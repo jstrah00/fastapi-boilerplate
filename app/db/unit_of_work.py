@@ -21,7 +21,7 @@ from typing import Any
 from motor.motor_asyncio import AsyncIOMotorClientSession
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.logging import get_logger
+from app.common.logging import get_logger
 from app.db.mongodb import get_mongodb_client
 from app.db.postgres import AsyncSessionLocal
 

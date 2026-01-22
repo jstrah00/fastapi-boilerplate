@@ -12,7 +12,7 @@ from uuid import UUID
 from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.logging import get_logger
+from app.common.logging import get_logger
 
 T = TypeVar("T")
 

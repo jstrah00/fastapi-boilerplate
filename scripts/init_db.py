@@ -4,8 +4,6 @@ Database initialization script.
 # =============================================================================
 # USAGE: Creates database tables and a default admin user.
 #
-#   make db-init
-#   # or
 #   uv run python scripts/init_db.py
 #
 # CUSTOMIZATION:
@@ -23,8 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.db.postgres import init_db, AsyncSessionLocal
 from app.db.mongodb import init_mongodb
 from app.models.postgres.user import User
-from app.core.security import get_password_hash
-from app.core.logging import configure_logging, get_logger
+from app.common.security import get_password_hash
+from app.common.logging import configure_logging, get_logger
 
 configure_logging()
 logger = get_logger(__name__)
@@ -36,7 +34,7 @@ logger = get_logger(__name__)
 
 # Default admin credentials - CHANGE IN PRODUCTION!
 DEFAULT_ADMIN_EMAIL = "admin@example.com"
-DEFAULT_ADMIN_PASSWORD = "admin123"  # Change this!
+DEFAULT_ADMIN_PASSWORD = "Ginorompepija123"
 DEFAULT_ADMIN_FIRST_NAME = "Admin"
 DEFAULT_ADMIN_LAST_NAME = "User"
 

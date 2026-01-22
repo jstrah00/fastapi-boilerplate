@@ -22,7 +22,7 @@ from sqlalchemy.pool import NullPool
 from app.main import app
 from app.db.postgres import Base, get_db
 from app.config import settings
-from app.core.security import get_password_hash
+from app.common.security import get_password_hash
 
 
 # =============================================================================

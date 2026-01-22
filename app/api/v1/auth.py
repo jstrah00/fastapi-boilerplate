@@ -8,11 +8,10 @@ Authentication API endpoints.
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.schemas.auth import LoginRequest, Token, RefreshTokenRequest
-from app.schemas.user import UserResponse
 from app.services.auth_service import AuthService
 from app.api.deps import get_auth_service, CurrentUser
-from app.core.logging import get_logger
-from app.core.exceptions import AuthenticationError
+from app.common.logging import get_logger
+from app.common.exceptions import AuthenticationError
 
 logger = get_logger(__name__)
 
@@ -68,14 +67,3 @@ async def logout(current_user: CurrentUser) -> dict[str, str]:
     """Logout current user."""
     logger.info("user_logout", user_id=str(current_user.id), email=current_user.email)
     return {"message": "Logged out successfully"}
-
-
-@router.get(
-    "/me",
-    response_model=UserResponse,
-    summary="Get current user",
-    description="Get current authenticated user information.",
-)
-async def get_current_user_info(current_user: CurrentUser) -> UserResponse:
-    """Get current authenticated user information."""
-    return UserResponse.model_validate(current_user)

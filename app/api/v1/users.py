@@ -24,9 +24,9 @@ from app.schemas.user import (
     UserListResponse,
     UserPasswordUpdate,
 )
-from app.core.logging import get_logger
-from app.core.exceptions import NotFoundError, AlreadyExistsError, ValidationError
-from app.core.permissions import Permission, require_permissions
+from app.common.logging import get_logger
+from app.common.exceptions import NotFoundError, AlreadyExistsError, ValidationError
+from app.common.permissions import Permission, require_permissions
 from app.models.postgres.user import User
 
 logger = get_logger(__name__)

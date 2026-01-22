@@ -12,7 +12,7 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 
 from app.config import settings
-from app.core.logging import get_logger
+from app.common.logging import get_logger
 
 logger = get_logger(__name__)
 

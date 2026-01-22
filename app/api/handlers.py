@@ -11,13 +11,13 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 from app.config import settings
-from app.core.logging import get_logger
-from app.core.exceptions import (
+from app.common.logging import get_logger
+from app.common.exceptions import (
     AppException,
     should_send_alert,
     CriticalError,
 )
-from app.core.alerts import telegram_alert
+from app.common.alerts import telegram_alert
 
 logger = get_logger(__name__)
 
@@ -57,7 +57,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
         )
 
     # Map exception types to HTTP status codes
-    from app.core.exceptions import (
+    from app.common.exceptions import (
         AuthenticationError,
         AuthorizationError,
         NotFoundError,

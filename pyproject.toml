@@ -40,6 +40,7 @@ dependencies = [
     # Authentication & Security
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.0.0,<4.1.0",  # passlib incompatible with bcrypt >= 4.1
 
     # Validation & Utilities
     "email-validator>=2.2.0",
@@ -69,13 +70,17 @@ dev = [
     "ipython>=8.20.0",
 ]
 
+[project.scripts]
+dev = "scripts.cli:dev"
+test = "scripts.cli:test"
+
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["app*"]
+include = ["app*", "scripts*"]
 
 # =============================================================================
 # Ruff Configuration (Linting & Formatting)

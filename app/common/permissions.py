@@ -35,7 +35,7 @@ from typing import Callable
 
 from fastapi import Depends, HTTPException, status
 
-from app.core.logging import get_logger
+from app.common.logging import get_logger
 
 logger = get_logger(__name__)
 

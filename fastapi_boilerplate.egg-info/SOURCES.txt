@@ -43,5 +43,9 @@ app/services/user_service.py
 fastapi_boilerplate.egg-info/PKG-INFO
 fastapi_boilerplate.egg-info/SOURCES.txt
 fastapi_boilerplate.egg-info/dependency_links.txt
+fastapi_boilerplate.egg-info/entry_points.txt
 fastapi_boilerplate.egg-info/requires.txt
 fastapi_boilerplate.egg-info/top_level.txt
+scripts/__init__.py
+scripts/cli.py
+scripts/init_db.py

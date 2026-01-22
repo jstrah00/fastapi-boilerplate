@@ -11,14 +11,14 @@ from uuid import UUID
 from app.repositories.user_repo import UserRepository
 from app.models.postgres.user import User
 from app.schemas.user import UserCreate, UserUpdate, UserRoleUpdate
-from app.core.security import get_password_hash, verify_password
-from app.core.logging import get_logger
-from app.core.exceptions import (
+from app.common.security import get_password_hash, verify_password
+from app.common.logging import get_logger
+from app.common.exceptions import (
     NotFoundError,
     AlreadyExistsError,
     ValidationError,
 )
-from app.core.permissions import Permission, has_permission
+from app.common.permissions import Permission, has_permission
 
 logger = get_logger(__name__)
 

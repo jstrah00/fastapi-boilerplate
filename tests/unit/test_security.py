@@ -8,7 +8,7 @@ Unit tests for security utilities.
 import pytest
 from datetime import timedelta
 
-from app.core.security import (
+from app.common.security import (
     get_password_hash,
     verify_password,
     create_access_token,

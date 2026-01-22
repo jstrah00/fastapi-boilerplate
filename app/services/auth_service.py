@@ -10,14 +10,14 @@ from uuid import UUID
 from app.repositories.user_repo import UserRepository
 from app.models.postgres.user import User
 from app.schemas.auth import LoginRequest, Token, RefreshTokenRequest
-from app.core.security import (
+from app.common.security import (
     verify_password,
     create_access_token,
     create_refresh_token,
     decode_token,
 )
-from app.core.logging import get_logger
-from app.core.exceptions import AuthenticationError, NotFoundError
+from app.common.logging import get_logger
+from app.common.exceptions import AuthenticationError, NotFoundError
 
 logger = get_logger(__name__)
 

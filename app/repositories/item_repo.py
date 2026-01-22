@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.postgres.item import Item
 from app.repositories.base import BaseRepository
-from app.core.logging import get_logger
+from app.common.logging import get_logger
 
 logger = get_logger(__name__)
 

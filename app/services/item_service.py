@@ -12,8 +12,8 @@ from app.repositories.item_repo import ItemRepository
 from app.models.postgres.item import Item
 from app.models.postgres.user import User
 from app.schemas.item import ItemCreate, ItemUpdate
-from app.core.logging import get_logger
-from app.core.exceptions import NotFoundError, ValidationError
+from app.common.logging import get_logger
+from app.common.exceptions import NotFoundError, ValidationError
 
 logger = get_logger(__name__)
 

@@ -5,9 +5,9 @@ Alembic migration environment with async support.
 # ALEMBIC: Database migrations for PostgreSQL.
 #
 # USAGE:
-#   make db-migrate     # Create new migration
-#   make db-upgrade     # Apply pending migrations
-#   make db-downgrade   # Revert last migration
+#   uv run alembic revision --autogenerate -m "description"  # Create new migration
+#   uv run alembic upgrade head                              # Apply pending migrations
+#   uv run alembic downgrade -1                              # Revert last migration
 #
 # CUSTOMIZATION:
 # - Add model imports below when you create new models

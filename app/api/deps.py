@@ -10,7 +10,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_db
@@ -20,13 +20,13 @@ from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 from app.services.item_service import ItemService
 from app.models.postgres.user import User
-from app.core.security import decode_token
-from app.core.logging import get_logger
+from app.common.security import decode_token
+from app.common.logging import get_logger
 
 logger = get_logger(__name__)
 
-# OAuth2 scheme for token authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+# Bearer token authentication
+security_scheme = HTTPBearer()
 
 
 # =============================================================================
@@ -77,7 +77,7 @@ async def get_item_service(
 # =============================================================================
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security_scheme)],
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> User:
     """
@@ -100,6 +100,7 @@ async def get_current_user(
     )
 
     # Decode token
+    token = credentials.credentials
     payload = decode_token(token)
     if payload is None:
         logger.warning("invalid_token", message="Token decode failed")

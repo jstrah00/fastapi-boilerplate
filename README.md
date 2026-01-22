@@ -27,26 +27,26 @@ Production-ready FastAPI boilerplate with PostgreSQL + MongoDB support, designed
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/jstrah00/fastapi-boilerplate.git
 cd fastapi-boilerplate
 
 # Copy environment file
 cp .env.example .env
 
 # Install dependencies
-make install
+uv sync
 
 # Start databases
-make docker-up
+docker compose up -d postgres mongodb
 
 # Run migrations
-make db-upgrade
+uv run alembic upgrade head
 
 # Initialize database with admin user
-make db-init
+uv run python scripts/init_db.py
 
 # Start development server
-make dev
+uv run dev
 ```
 
 The API will be available at `http://localhost:8000`.
@@ -71,7 +71,7 @@ The API will be available at `http://localhost:8000`.
 │   │   ├── deps.py       # Dependency injection
 │   │   └── handlers.py   # Exception handlers
 │   │
-│   ├── core/
+│   ├── common/
 │   │   ├── exceptions.py # Custom exceptions
 │   │   ├── logging.py    # Structured logging
 │   │   ├── permissions.py# Role-based access control
@@ -112,46 +112,113 @@ The API will be available at `http://localhost:8000`.
 ├── scripts/              # Initialization scripts
 ├── tests/                # Test suite
 ├── docker-compose.yml    # Development containers
-├── Makefile              # Development commands
 └── pyproject.toml        # Project configuration
 ```
 
 ## Available Commands
 
+### Docker Commands
+
 ```bash
-make help           # Show all commands
+# Start databases (PostgreSQL + MongoDB)
+docker compose up -d postgres mongodb
 
-# Development
-make dev            # Start development server
-make shell          # Open Python shell
+# Start all services (including API in container)
+docker compose up -d
 
-# Database
-make db-migrate     # Create new migration
-make db-upgrade     # Apply migrations
-make db-downgrade   # Revert last migration
-make db-init        # Initialize with seed data
+# Start with development tools (PgAdmin + Mongo Express)
+docker compose --profile tools up -d
 
-# Code Quality
-make format         # Format code with Ruff
-make lint           # Check code style
-make type-check     # Run MyPy type checking
-make check          # Run all quality checks
+# Stop all containers
+docker compose down
 
-# Testing
-make test           # Run all tests
-make test-unit      # Run unit tests
-make test-cov       # Run with coverage
+# Stop and remove volumes (WARNING: deletes data)
+docker compose down -v
 
-# Docker
-make docker-up      # Start containers
-make docker-down    # Stop containers
-make docker-logs    # View logs
-make docker-tools   # Start with PgAdmin & Mongo Express
+# View logs
+docker compose logs -f
+docker compose logs -f postgres    # Specific service
 
-# Setup
-make setup          # Complete project setup
-make reset          # Reset environment
-make clean          # Clean temp files
+# Database shells
+docker compose exec postgres psql -U app_user -d app_db
+docker compose exec mongodb mongosh -u app_admin -p app_mongo_password
+```
+
+### Python/uv Commands
+
+```bash
+# Install dependencies
+uv sync
+
+# Start development server
+uv run dev
+
+# Open Python shell
+uv run ipython
+```
+
+### Database Migrations (Alembic)
+
+```bash
+# Apply all pending migrations
+uv run alembic upgrade head
+
+# Create new migration
+uv run alembic revision --autogenerate -m "migration description"
+
+# Revert last migration
+uv run alembic downgrade -1
+
+# Reset database (revert all + apply all)
+uv run alembic downgrade base && uv run alembic upgrade head
+
+# Initialize with seed data (admin user)
+uv run python scripts/init_db.py
+```
+
+### Code Quality
+
+```bash
+# Format code
+uv run ruff format app tests
+uv run ruff check --fix app tests
+
+# Lint code
+uv run ruff check app tests
+
+# Type checking
+uv run mypy app
+
+# Run all quality checks
+uv run ruff check app tests && uv run mypy app
+```
+
+### Testing
+
+```bash
+# Run all tests with coverage (uses uv script)
+uv run test
+
+# Run all tests (without coverage)
+uv run pytest
+
+# Run specific tests
+uv run pytest tests/unit -v
+uv run pytest tests/integration -v
+```
+
+### Utilities
+
+```bash
+# Generate secret key
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# Clean temporary files
+find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null
+find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null
+find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null
+find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null
+find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null
 ```
 
 ## Configuration
@@ -168,7 +235,7 @@ This boilerplate supports both PostgreSQL and MongoDB. You can use:
 
 ### Role-Based Permissions
 
-The permission system is defined in `app/core/permissions.py`:
+The permission system is defined in `app/common/permissions.py`:
 
 ```python
 # Define permissions
@@ -203,7 +270,7 @@ Once running, access the API docs at:
 Start with optional tools (PgAdmin & Mongo Express):
 
 ```bash
-make docker-tools
+docker compose --profile tools up -d
 ```
 
 - **PgAdmin**: http://localhost:5050 (admin@local.dev / admin)
@@ -212,11 +279,8 @@ make docker-tools
 ## Testing
 
 ```bash
-# Run all tests
-make test
-
-# Run with coverage
-make test-cov
+# Run all tests with coverage
+uv run test
 
 # Run specific tests
 uv run pytest tests/unit -v
@@ -227,7 +291,7 @@ uv run pytest tests/integration -v
 
 ### Production Checklist
 
-1. Change `SECRET_KEY` (use `make generate-secret`)
+1. Change `SECRET_KEY` (use `python -c "import secrets; print(secrets.token_hex(32))"`)
 2. Set `DEBUG=false`
 3. Set `ENVIRONMENT=production`
 4. Update CORS origins
@@ -251,8 +315,8 @@ docker run -e ENVIRONMENT=production your-app:latest
 
 1. Create model in `app/models/postgres/your_model.py`
 2. Import in `alembic/env.py`
-3. Create migration: `make db-migrate`
-4. Apply migration: `make db-upgrade`
+3. Create migration: `uv run alembic revision --autogenerate -m "add your_model"`
+4. Apply migration: `uv run alembic upgrade head`
 
 ### Adding a New Model (MongoDB)
 
@@ -270,7 +334,7 @@ docker run -e ENVIRONMENT=production your-app:latest
 
 ### Adding New Permissions
 
-1. Add permission to `Permission` enum in `app/core/permissions.py`
+1. Add permission to `Permission` enum in `app/common/permissions.py`
 2. Add permission to relevant roles in `ROLE_PERMISSIONS`
 3. Use `require_permissions()` in your endpoints
 

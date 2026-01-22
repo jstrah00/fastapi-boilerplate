@@ -1,0 +1,3 @@
+[console_scripts]
+dev = scripts.cli:dev
+test = scripts.cli:test

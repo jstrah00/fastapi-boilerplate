@@ -17,8 +17,8 @@ from app.schemas.item import (
     ItemResponse,
     ItemListResponse,
 )
-from app.core.logging import get_logger
-from app.core.exceptions import NotFoundError, ValidationError
+from app.common.logging import get_logger
+from app.common.exceptions import NotFoundError, ValidationError
 
 logger = get_logger(__name__)
 

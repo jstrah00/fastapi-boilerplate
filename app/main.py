@@ -13,8 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
 from app.config import settings
-from app.core.logging import configure_logging, get_logger
-from app.core.exceptions import AppException
+from app.common.logging import configure_logging, get_logger
+from app.common.exceptions import AppException
 from app.db.postgres import init_db as init_postgres, close_db as close_postgres
 from app.db.mongodb import init_mongodb, close_mongodb
 from app.api.v1.router import api_router
