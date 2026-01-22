@@ -359,6 +359,35 @@ Each example shows the complete conversation flow: user request → Claude.ai cl
 **Combined Benefit:**
 This workflow reduces total Claude Code token usage by 50-60% compared to ad-hoc development.
 
+#### Choosing Between Sonnet and Opus
+
+Claude Code allows you to select the model for each session. Here's when to use each:
+
+**Use Sonnet (claude-sonnet-4-5) for:**
+- Straightforward CRUD implementations following established patterns
+- Refactoring existing code with clear requirements
+- Simple bug fixes and minor enhancements
+- Routine database migrations
+- Adding tests for existing features
+- **Token savings:** ~60-70% compared to Opus
+
+**Use Opus (claude-opus-4-5) for:**
+- Complex architectural decisions requiring deep reasoning
+- Features involving multiple databases and cross-cutting concerns
+- Debugging subtle issues or edge cases
+- Performance optimizations requiring trade-off analysis
+- Security-critical implementations
+- Novel features without existing patterns
+
+**Switching models:**
+```bash
+# In Claude Code:
+/model sonnet    # Switch to Sonnet for routine tasks
+/model opus      # Switch to Opus for complex reasoning
+```
+
+**Pro tip:** Start with Sonnet for most tasks. If Claude struggles or the problem requires deeper reasoning, switch to Opus mid-session using `/model opus`.
+
 ### Dual Database Considerations
 
 **When to use PostgreSQL:**

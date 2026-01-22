@@ -1,6 +1,6 @@
 # FastAPI Boilerplate
 
-Production-ready FastAPI boilerplate with PostgreSQL + MongoDB support, designed for quick MVP development.
+Production-ready FastAPI boilerplate with PostgreSQL + MongoDB support, designed for quick MVP development. Includes integrated Claude Code skills and workflow optimizations for AI-assisted development.
 
 ## Features
 
@@ -116,9 +116,9 @@ The API will be available at `http://localhost:8000`.
 ```
 
 
-## Feature Development Workflow
+## Feature Development Workflow (Optional - For Claude Code Users)
 
-This boilerplate includes a two-stage workflow for implementing new features efficiently:
+This boilerplate includes a two-stage workflow for implementing new features efficiently with Claude Code:
 
 1. **Planning Stage** (Claude.ai Project): Define features with business context
 2. **Implementation Stage** (Claude Code): Execute with optimized, pattern-aware prompts
@@ -128,6 +128,8 @@ This boilerplate includes a two-stage workflow for implementing new features eff
 - Ensures features follow boilerplate conventions automatically
 - Generates production-ready code faster
 - Maintains architectural consistency
+
+**Note:** This workflow is designed specifically for Claude Code users and is completely optional. You can develop features using your preferred method - the workflow simply provides optimized patterns if you choose to use Claude Code.
 
 **Read the complete guide:** [docs/FEATURE_WORKFLOW.md](docs/FEATURE_WORKFLOW.md)
 
