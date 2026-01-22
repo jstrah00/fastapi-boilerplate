@@ -1,10 +1,64 @@
 """
 Application configuration using Pydantic Settings.
 
-# =============================================================================
-# CONFIGURATION: Update these values for your project.
-# All settings can be overridden with environment variables.
-# =============================================================================
+Centralizes all application settings with environment variable support,
+type validation, and sensible defaults for development.
+
+Key components:
+    - Settings: Pydantic BaseSettings class with all configuration
+    - settings: Global singleton instance
+    - Environment groups: App, API, CORS, PostgreSQL, MongoDB, Telegram
+
+Dependencies:
+    - pydantic-settings: Settings management with env var support
+    - python-dotenv: Load .env file
+
+Related files:
+    - .env: Environment-specific overrides (not in git)
+    - .env.example: Template with all available settings
+    - docker-compose.yml: Container environment configuration
+
+Common commands:
+    - Create config: cp .env.example .env
+    - Generate secret: python -c "import secrets; print(secrets.token_hex(32))"
+
+Example:
+    Accessing settings::
+
+        from app.config import settings
+
+        # Application settings
+        print(settings.APP_NAME)
+        print(settings.ENVIRONMENT)  # "development", "staging", "production"
+
+        # Database URLs
+        print(settings.postgres_url)
+        print(settings.MONGODB_URL)
+
+        # Helper properties
+        if settings.is_production:
+            # Production-specific logic
+            ...
+
+    Environment variables::
+
+        # .env file
+        APP_NAME=MyApp
+        ENVIRONMENT=production
+        DEBUG=false
+        SECRET_KEY=your-secret-key-here
+        POSTGRES_SERVER=localhost
+        POSTGRES_USER=app_user
+        POSTGRES_PASSWORD=secret
+        POSTGRES_DB=myapp
+
+Setting categories:
+    - Application: APP_NAME, APP_VERSION, ENVIRONMENT, DEBUG, LOG_LEVEL
+    - API Security: SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+    - CORS: CORS_ORIGINS, CORS_CREDENTIALS, CORS_METHODS, CORS_HEADERS
+    - PostgreSQL: POSTGRES_SERVER, POSTGRES_PORT, POSTGRES_USER, etc.
+    - MongoDB: MONGODB_URL, MONGODB_DB, pool settings
+    - Alerts: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_ALERTS_ENABLED
 """
 from typing import Any, Literal
 from pydantic import field_validator

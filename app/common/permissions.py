@@ -1,34 +1,55 @@
 """
-Role-based permissions system.
+Role-based access control (RBAC) system.
 
-# =============================================================================
-# PERMISSIONS: Flexible role-based access control (RBAC) system.
-#
-# This module provides:
-# - Permission definitions for granular access control
-# - Role definitions with sets of permissions
-# - FastAPI dependencies for permission checking
-#
-# CUSTOMIZATION:
-# 1. Add new permissions to the Permission enum
-# 2. Create new roles in ROLE_PERMISSIONS with desired permission sets
-# 3. Use require_permissions() dependency in your routes
-#
-# EXAMPLE USAGE:
-#     @router.get("/admin/users")
-#     async def admin_list_users(
-#         current_user: User = Depends(require_permissions(Permission.USERS_READ))
-#     ):
-#         ...
-#
-#     @router.delete("/admin/users/{user_id}")
-#     async def admin_delete_user(
-#         current_user: User = Depends(require_permissions(
-#             Permission.USERS_READ, Permission.USERS_DELETE
-#         ))
-#     ):
-#         ...
-# =============================================================================
+Provides a flexible permission system with granular permissions, role definitions,
+and FastAPI dependencies for enforcing access control in endpoints.
+
+Key components:
+    - Permission: Enum of all available permissions (e.g., USERS_READ, ITEMS_CREATE)
+    - Role: Enum of user roles (e.g., ADMIN, USER)
+    - ROLE_PERMISSIONS: Mapping of roles to their permission sets
+    - require_permissions: FastAPI dependency requiring ALL listed permissions
+    - require_any_permission: FastAPI dependency requiring ANY listed permission
+    - require_admin: Convenience dependency for admin-only routes
+    - get_user_permissions: Get combined role + custom permissions for a user
+    - has_permission: Check if a user has a specific permission
+
+Dependencies:
+    - fastapi: Depends, HTTPException for dependency injection
+    - app.api.deps: get_current_user (imported at runtime to avoid circular import)
+
+Related files:
+    - app/api/deps.py: CurrentUser, CurrentAdmin dependencies
+    - app/models/postgres/user.py: User.role and User.custom_permissions fields
+    - app/schemas/user.py: UserCreate, UserRoleUpdate with role validation
+    - app/api/v1/users.py: Example usage in endpoints
+
+Common commands:
+    - Test: uv run pytest tests/ -k "permission"
+
+Example:
+    Using in endpoints::
+
+        from app.common.permissions import Permission, require_permissions
+
+        @router.delete("/users/{user_id}")
+        async def delete_user(
+            user_id: UUID,
+            current_user: User = Depends(require_permissions(
+                Permission.USERS_READ,
+                Permission.USERS_DELETE
+            ))
+        ):
+            # Only users with BOTH permissions can access
+            ...
+
+    Checking permissions in service layer::
+
+        from app.common.permissions import has_permission, Permission
+
+        if has_permission(user.role, Permission.ITEMS_DELETE, user.custom_permissions):
+            # User can delete items
+            ...
 """
 from enum import Enum
 from typing import Callable

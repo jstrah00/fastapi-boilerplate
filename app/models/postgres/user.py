@@ -1,10 +1,54 @@
 """
-User model for PostgreSQL.
+User model for PostgreSQL with authentication and RBAC support.
 
-# =============================================================================
-# EXAMPLE MODEL: This is an example User model demonstrating SQLAlchemy usage.
-# Customize this model based on your project's authentication requirements.
-# =============================================================================
+Defines the User entity with email/password authentication, role-based permissions,
+and standard fields for user management.
+
+Key components:
+    - User: SQLAlchemy model with authentication and RBAC fields
+    - email: Unique identifier for authentication
+    - password_hash: Bcrypt-hashed password
+    - role: User role for RBAC (admin, user, etc.)
+    - custom_permissions: Additional permissions beyond role defaults
+    - status: Account status (active, inactive, invited)
+
+Dependencies:
+    - sqlalchemy: ORM and column types
+    - app.db.postgres: Base class for models
+
+Related files:
+    - app/common/security.py: Password hashing utilities
+    - app/common/permissions.py: Role and permission definitions
+    - app/schemas/user.py: Pydantic schemas for API
+    - app/repositories/user_repo.py: Data access methods
+    - app/services/user_service.py: Business logic
+
+Common commands:
+    - Create migration: uv run alembic revision --autogenerate -m "update users"
+    - Apply migration: uv run alembic upgrade head
+
+Example:
+    Creating a user::
+
+        from app.models.postgres.user import User
+        from app.common.security import get_password_hash
+
+        user = User(
+            email="user@example.com",
+            first_name="John",
+            last_name="Doe",
+            password_hash=get_password_hash("password123"),
+            role="user",
+            status="active",
+        )
+        session.add(user)
+        await session.commit()
+
+    Checking properties::
+
+        user.full_name  # "John Doe"
+        user.is_active  # True
+        user.is_admin   # False (unless role == "admin")
 """
 from datetime import datetime, UTC
 from uuid import UUID, uuid4

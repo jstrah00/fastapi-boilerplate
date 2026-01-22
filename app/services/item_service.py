@@ -1,10 +1,58 @@
 """
 Item service with business logic.
 
-# =============================================================================
-# EXAMPLE SERVICE: CRUD service for Items.
-# Use this as a template for your own services.
-# =============================================================================
+Contains CRUD business logic for items with ownership-based authorization.
+Use this as a template for creating services for your own resources.
+
+Key components:
+    - ItemService: Service class for item operations
+    - get_item: Get item with ownership/admin check
+    - list_items: List items (own for users, all for admins)
+    - create_item: Create item owned by current user
+    - update_item: Update item (owner or admin only)
+    - delete_item: Soft delete item (owner or admin only)
+
+Dependencies:
+    - app.repositories.item_repo: Item data access
+    - app.common.exceptions: Business error types
+
+Related files:
+    - app/api/v1/items.py: Item API endpoints
+    - app/repositories/item_repo.py: Data access layer
+    - app/schemas/item.py: Request/response schemas
+
+Common commands:
+    - Test: uv run pytest tests/ -k "item"
+
+Example:
+    Creating an item::
+
+        item_service = ItemService(item_repo)
+
+        item = await item_service.create_item(
+            data=ItemCreate(title="My Item", description="Description"),
+            owner=current_user
+        )
+
+    Listing items::
+
+        items, total = await item_service.list_items(
+            current_user=user,
+            skip=0,
+            limit=20
+        )
+        # Regular users see their own items
+        # Admins see all items
+
+    Updating with authorization::
+
+        updated = await item_service.update_item(
+            item_id=item_id,
+            data=ItemUpdate(title="New Title"),
+            current_user=user  # Must be owner or admin
+        )
+        # Raises ValidationError if not authorized
+        # Raises NotFoundError if item doesn't exist
 """
 from uuid import UUID
 

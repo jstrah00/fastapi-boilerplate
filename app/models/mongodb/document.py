@@ -1,15 +1,62 @@
 """
 Example Document model for MongoDB using Beanie ODM.
 
-# =============================================================================
-# EXAMPLE MODEL: This demonstrates how to create MongoDB documents with Beanie.
-# Use this as a template for your own MongoDB models.
-# =============================================================================
+Demonstrates how to create MongoDB documents with Beanie, featuring flexible
+schemas, nested data, and cross-database references.
 
-# MONGODB USAGE NOTES:
-# - MongoDB is ideal for: flexible schemas, document storage, rapid prototyping
-# - Consider MongoDB for: content management, product catalogs, real-time analytics
-# - Beanie provides an async ODM similar to SQLAlchemy for MongoDB
+Key components:
+    - ExampleDocument: Beanie Document model with flexible schema
+    - data: Dict field for arbitrary JSON (no migrations needed)
+    - tags: List field demonstrating array storage
+    - owner_id: String reference to PostgreSQL user (cross-DB)
+    - Settings: Beanie configuration for collection name and indexes
+
+Dependencies:
+    - beanie: Async ODM for MongoDB
+    - pydantic: Data validation (Beanie uses Pydantic)
+    - app.db.mongodb: Database initialization
+
+Related files:
+    - app/db/mongodb.py: init_mongodb() registers this document
+    - app/config.py: MongoDB connection settings
+
+Common commands:
+    - Start MongoDB: docker compose up -d mongodb
+    - Mongo shell: docker compose exec mongodb mongosh
+
+Example:
+    Creating a document::
+
+        from app.models.mongodb.document import ExampleDocument
+
+        doc = ExampleDocument(
+            name="My Document",
+            description="Description here",
+            data={"nested": {"key": "value"}, "count": 42},
+            tags=["tag1", "tag2"],
+            owner_id=str(user.id),  # Cross-DB reference as string
+        )
+        await doc.insert()
+
+    Querying documents::
+
+        # Find by field
+        docs = await ExampleDocument.find(
+            ExampleDocument.status == "active"
+        ).to_list()
+
+        # Find one
+        doc = await ExampleDocument.find_one(
+            ExampleDocument.name == "My Document"
+        )
+
+        # Update
+        doc.data["count"] = 100
+        await doc.save()
+
+When to use MongoDB vs PostgreSQL:
+    - MongoDB: Flexible/evolving schemas, nested data, document storage
+    - PostgreSQL: Strict schemas, relationships, complex queries, transactions
 """
 from datetime import datetime, UTC
 from typing import Any

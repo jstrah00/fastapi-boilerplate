@@ -1,9 +1,57 @@
 """
-FastAPI Boilerplate - Main Application.
+FastAPI Boilerplate - Main Application Entry Point.
 
-# =============================================================================
-# MAIN: Application entry point with lifespan management.
-# =============================================================================
+Initializes the FastAPI application with middleware, exception handlers,
+database connections, and API routers. Manages application lifecycle.
+
+Key components:
+    - app: FastAPI application instance
+    - lifespan: Async context manager for startup/shutdown
+    - Middleware: CORS configuration
+    - Exception handlers: App, validation, and general error handling
+    - Health check: /health endpoint for monitoring
+
+Dependencies:
+    - fastapi: Web framework
+    - app.config: Application settings
+    - app.db: Database initialization
+    - app.api: Routers and handlers
+
+Related files:
+    - app/config.py: Settings loaded from environment
+    - app/db/postgres.py: PostgreSQL initialization
+    - app/db/mongodb.py: MongoDB initialization
+    - app/api/v1/router.py: API routes
+    - app/api/handlers.py: Exception handlers
+
+Common commands:
+    - Development: uv run dev
+    - Production: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    - Docker: docker compose up -d
+
+Example:
+    Running the application::
+
+        # Development with auto-reload
+        uv run dev
+
+        # Or directly with uvicorn
+        uvicorn app.main:app --reload
+
+        # Production
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+    Accessing the API::
+
+        # Health check
+        curl http://localhost:8000/health
+
+        # API documentation
+        open http://localhost:8000/docs
+
+Lifecycle events:
+    - Startup: Initialize PostgreSQL, MongoDB, configure logging
+    - Shutdown: Close database connections gracefully
 """
 from contextlib import asynccontextmanager
 from typing import AsyncIterator

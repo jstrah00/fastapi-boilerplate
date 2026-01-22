@@ -1,10 +1,58 @@
 """
 FastAPI dependencies for dependency injection.
 
-# =============================================================================
-# DEPENDENCIES: Dependency injection for services, repositories, and auth.
-# This is where you wire up your application components.
-# =============================================================================
+Central location for all dependency injection setup, including database sessions,
+repositories, services, and authentication dependencies.
+
+Key components:
+    - Repository dependencies: get_user_repository, get_item_repository
+    - Service dependencies: get_user_service, get_auth_service, get_item_service
+    - Auth dependencies: get_current_user, get_current_active_user, get_current_admin
+    - Type aliases: CurrentUser, CurrentAdmin, UserSvc, ItemSvc, UserRepo, ItemRepo
+
+Dependencies:
+    - fastapi: Depends, HTTPException
+    - app.db.postgres: Database session
+    - app.repositories: Repository classes
+    - app.services: Service classes
+    - app.common.security: Token decoding
+
+Related files:
+    - app/db/postgres.py: get_db session dependency
+    - app/api/v1/: Endpoints using these dependencies
+    - app/common/permissions.py: Permission-based dependencies
+
+Common commands:
+    - Test: uv run pytest tests/integration/ -v
+
+Example:
+    Using type aliases in endpoints::
+
+        from app.api.deps import CurrentUser, ItemSvc
+
+        @router.get("/items")
+        async def list_items(
+            current_user: CurrentUser,  # Authenticated user
+            item_service: ItemSvc,      # Injected service
+        ):
+            return await item_service.list_items(current_user)
+
+    Using specific dependencies::
+
+        from app.api.deps import get_current_admin, get_user_service
+
+        @router.delete("/users/{user_id}")
+        async def delete_user(
+            user_id: UUID,
+            current_user: User = Depends(get_current_admin),
+            user_service: UserService = Depends(get_user_service),
+        ):
+            ...
+
+Adding new dependencies:
+    1. Create repository dependency: get_{resource}_repository
+    2. Create service dependency: get_{resource}_service
+    3. Create type alias: {Resource}Svc, {Resource}Repo
 """
 from typing import Annotated
 from uuid import UUID

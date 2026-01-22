@@ -1,15 +1,54 @@
 """
-User API endpoints.
+User API endpoints with authentication and role-based permissions.
 
-# =============================================================================
-# EXAMPLE: User CRUD API with authentication and role-based permissions.
-#
-# This file demonstrates two approaches to authorization:
-# 1. Simple admin check: Using CurrentAdmin dependency (see create_user)
-# 2. Fine-grained permissions: Using require_permissions (see update_user_role)
-#
-# CUSTOMIZATION: Choose the approach that fits your needs.
-# =============================================================================
+Provides CRUD operations for user management with two authorization approaches:
+1. Simple admin check using CurrentAdmin dependency
+2. Fine-grained RBAC using require_permissions dependency
+
+Key components:
+    - POST /users/: Create user (admin only)
+    - GET /users/me: Get current user info
+    - GET /users/: List all users (admin only)
+    - GET /users/{id}: Get user by ID
+    - PATCH /users/{id}: Update user info
+    - POST /users/{id}/password: Change password
+    - DELETE /users/{id}: Deactivate user (admin only)
+    - PATCH /users/{id}/role: Update role/permissions (requires users:update)
+
+Dependencies:
+    - app.services.user_service: User business logic
+    - app.schemas.user: Request/response schemas
+    - app.api.deps: CurrentUser, CurrentAdmin, UserSvc
+    - app.common.permissions: require_permissions
+
+Related files:
+    - app/services/user_service.py: Business logic
+    - app/schemas/user.py: Pydantic schemas
+    - app/repositories/user_repo.py: Data access
+    - app/common/permissions.py: RBAC definitions
+
+Common commands:
+    - Test: uv run pytest tests/integration/ -k "user" -v
+    - Try: http://localhost:8000/docs#/users
+
+Example:
+    Get current user::
+
+        curl http://localhost:8000/api/v1/users/me \\
+            -H "Authorization: Bearer <token>"
+
+    Create user (admin)::
+
+        curl -X POST http://localhost:8000/api/v1/users/ \\
+            -H "Authorization: Bearer <admin_token>" \\
+            -H "Content-Type: application/json" \\
+            -d '{"email": "new@example.com", "first_name": "John", ...}'
+
+    Update user role::
+
+        curl -X PATCH http://localhost:8000/api/v1/users/{id}/role \\
+            -H "Authorization: Bearer <token_with_users:update>" \\
+            -d '{"role": "admin"}'
 """
 from uuid import UUID
 

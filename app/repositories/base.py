@@ -1,10 +1,53 @@
 """
 Base repository with common CRUD operations.
 
-# =============================================================================
-# REPOSITORY PATTERN: Abstracts data access from business logic.
-# Use this base class for all your PostgreSQL repositories.
-# =============================================================================
+Provides a generic repository pattern implementation that abstracts data access
+operations from business logic, with support for pagination and filtering.
+
+Key components:
+    - BaseRepository[T]: Generic repository class for SQLAlchemy models
+    - get: Retrieve single record by ID
+    - get_all: Retrieve multiple records with pagination and filters
+    - count: Count records matching filters
+    - create: Insert new record
+    - update: Update existing record by ID
+    - delete: Hard delete record by ID
+    - soft_delete: Soft delete by setting status to 'inactive'
+
+Dependencies:
+    - sqlalchemy: ORM operations
+    - app.common.logging: Structured logging
+
+Related files:
+    - app/repositories/user_repo.py: User-specific repository
+    - app/repositories/item_repo.py: Item-specific repository
+    - app/services/: Services that use repositories
+
+Common commands:
+    - Test: uv run pytest tests/ -k "repository"
+
+Example:
+    Creating a custom repository::
+
+        from app.repositories.base import BaseRepository
+        from app.models.postgres.product import Product
+
+        class ProductRepository(BaseRepository[Product]):
+            def __init__(self, db: AsyncSession):
+                super().__init__(Product, db)
+
+            async def get_by_category(self, category_id: UUID) -> list[Product]:
+                result = await self.db.execute(
+                    select(Product).where(Product.category_id == category_id)
+                )
+                return list(result.scalars().all())
+
+    Using the base repository::
+
+        repo = UserRepository(db)
+        user = await repo.get(user_id)
+        users = await repo.get_all(skip=0, limit=10, filters={"status": "active"})
+        total = await repo.count(filters={"role": "admin"})
 """
 from typing import Generic, TypeVar, Type, Any
 from uuid import UUID

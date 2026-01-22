@@ -1,9 +1,51 @@
 """
 Authentication service with business logic.
 
-# =============================================================================
-# SERVICE LAYER: Handles authentication operations.
-# =============================================================================
+Handles user authentication including login, token refresh, and token validation.
+Enforces authentication rules and coordinates between security utilities and user data.
+
+Key components:
+    - AuthService: Service class for authentication operations
+    - login: Authenticate with email/password, return tokens
+    - refresh_access_token: Exchange refresh token for new tokens
+    - validate_token: Decode token and return associated user
+
+Dependencies:
+    - app.repositories.user_repo: User data access
+    - app.common.security: Token creation and password verification
+    - app.common.exceptions: Authentication errors
+
+Related files:
+    - app/api/v1/auth.py: Authentication endpoints
+    - app/api/deps.py: get_current_user dependency
+    - app/common/security.py: Token utilities
+    - app/schemas/auth.py: Request/response schemas
+
+Common commands:
+    - Test: uv run pytest tests/integration/test_auth.py -v
+
+Example:
+    Login flow::
+
+        auth_service = AuthService(user_repo)
+
+        # Login with credentials
+        tokens = await auth_service.login(LoginRequest(
+            email="user@example.com",
+            password="password123"
+        ))
+        # Returns Token(access_token="...", refresh_token="...", token_type="bearer")
+
+    Refresh flow::
+
+        new_tokens = await auth_service.refresh_access_token(RefreshTokenRequest(
+            refresh_token="eyJ..."
+        ))
+
+    Token validation (used by get_current_user)::
+
+        user = await auth_service.validate_token(access_token)
+        # Returns User model if valid, raises AuthenticationError if invalid
 """
 from uuid import UUID
 

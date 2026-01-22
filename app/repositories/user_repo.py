@@ -1,9 +1,49 @@
 """
 User repository for data access operations.
 
-# =============================================================================
-# EXAMPLE REPOSITORY: Extends BaseRepository with user-specific queries.
-# =============================================================================
+Extends BaseRepository with user-specific queries for authentication,
+filtering, and user management operations.
+
+Key components:
+    - UserRepository: Repository for User model
+    - get_by_email: Find user by email address
+    - get_active_users: Get paginated list of active users
+    - get_admins: Get all admin users
+
+Dependencies:
+    - sqlalchemy: ORM operations
+    - app.repositories.base: BaseRepository class
+    - app.models.postgres.user: User model
+
+Related files:
+    - app/models/postgres/user.py: User model definition
+    - app/services/user_service.py: Business logic using this repo
+    - app/services/auth_service.py: Auth logic using this repo
+    - app/api/deps.py: Dependency injection for this repo
+
+Common commands:
+    - Test: uv run pytest tests/ -k "user"
+
+Example:
+    Using UserRepository::
+
+        from app.repositories.user_repo import UserRepository
+
+        repo = UserRepository(db)
+
+        # Find by email (for login)
+        user = await repo.get_by_email("user@example.com")
+
+        # Get paginated active users
+        users = await repo.get_active_users(skip=0, limit=20)
+
+        # Get all admins
+        admins = await repo.get_admins()
+
+        # Inherited from BaseRepository
+        user = await repo.get(user_id)
+        await repo.create(new_user)
+        await repo.update(user_id, {"status": "inactive"})
 """
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

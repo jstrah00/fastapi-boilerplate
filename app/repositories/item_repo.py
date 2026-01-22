@@ -1,10 +1,45 @@
 """
 Item repository for data access operations.
 
-# =============================================================================
-# EXAMPLE REPOSITORY: Shows a simple CRUD repository for Items.
-# Use this as a template for your own repositories.
-# =============================================================================
+Extends BaseRepository with item-specific queries for ownership-based
+filtering. Use this as a template for your own repositories.
+
+Key components:
+    - ItemRepository: Repository for Item model
+    - get_by_owner: Get items owned by a specific user
+    - count_by_owner: Count items for a specific user
+
+Dependencies:
+    - sqlalchemy: ORM operations
+    - app.repositories.base: BaseRepository class
+    - app.models.postgres.item: Item model
+
+Related files:
+    - app/models/postgres/item.py: Item model definition
+    - app/services/item_service.py: Business logic using this repo
+    - app/api/deps.py: Dependency injection for this repo
+
+Common commands:
+    - Test: uv run pytest tests/ -k "item"
+
+Example:
+    Using ItemRepository::
+
+        from app.repositories.item_repo import ItemRepository
+
+        repo = ItemRepository(db)
+
+        # Get items for a user
+        items = await repo.get_by_owner(owner_id=user.id, skip=0, limit=20)
+
+        # Count user's items
+        total = await repo.count_by_owner(user.id)
+
+        # Inherited from BaseRepository
+        item = await repo.get(item_id)
+        await repo.create(new_item)
+        await repo.update(item_id, {"title": "New Title"})
+        await repo.soft_delete(item_id)  # Sets status='inactive'
 """
 from uuid import UUID
 

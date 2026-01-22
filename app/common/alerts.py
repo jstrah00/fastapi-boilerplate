@@ -1,15 +1,60 @@
 """
 Telegram alert service for system notifications.
 
-# =============================================================================
-# ALERTS: Optional Telegram notifications for critical errors.
-#
-# NOTE: This is optional. If you don't need Telegram alerts:
-# 1. Remove this file
-# 2. Remove telegram references from app/api/handlers.py
-# 3. Remove TELEGRAM_* settings from config.py
-# 4. Remove python-telegram-bot from pyproject.toml
-# =============================================================================
+Provides async Telegram notifications for critical errors and system events,
+with configurable alert levels and automatic environment context.
+
+Key components:
+    - TelegramAlertService: Service class for sending alerts
+    - telegram_alert: Global instance for sending notifications
+    - AlertLevel: Type alias for INFO, WARNING, ERROR, CRITICAL
+    - send_alert: Async method to send formatted Telegram messages
+
+Dependencies:
+    - httpx: Async HTTP client for Telegram API
+    - app.config: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_ALERTS_ENABLED
+
+Related files:
+    - app/config.py: Telegram configuration settings
+    - app/api/handlers.py: Sends alerts for critical/unhandled exceptions
+    - app/common/exceptions.py: should_send_alert() determines when to alert
+
+Common commands:
+    - Get bot token: Create bot via @BotFather on Telegram
+    - Get chat ID: Send message to bot, check https://api.telegram.org/bot<TOKEN>/getUpdates
+    - Test: Set TELEGRAM_ALERTS_ENABLED=true and trigger an error
+
+Example:
+    Sending alerts manually::
+
+        from app.common.alerts import telegram_alert
+
+        await telegram_alert.send_alert(
+            message="Payment processing failed",
+            level="ERROR",
+            extra_data={
+                "order_id": str(order.id),
+                "error": str(exception),
+                "amount": order.total,
+            }
+        )
+
+    Alert format in Telegram::
+
+        ERROR - FastAPI Boilerplate
+
+        Payment processing failed
+
+        Details:
+        - order_id: `abc-123`
+        - error: `Connection timeout`
+        - amount: `99.99`
+
+        _Env: production_
+
+Note:
+    This is optional. If not using Telegram alerts, remove this file and
+    related references in handlers.py and config.py.
 """
 from typing import Literal
 

@@ -115,6 +115,41 @@ The API will be available at `http://localhost:8000`.
 └── pyproject.toml        # Project configuration
 ```
 
+
+## Feature Development Workflow
+
+This boilerplate includes a two-stage workflow for implementing new features efficiently:
+
+1. **Planning Stage** (Claude.ai Project): Define features with business context
+2. **Implementation Stage** (Claude Code): Execute with optimized, pattern-aware prompts
+
+**Benefits:**
+- Reduces Claude Code token usage (important for Pro plan limits)
+- Ensures features follow boilerplate conventions automatically
+- Generates production-ready code faster
+- Maintains architectural consistency
+
+**Read the complete guide:** [docs/FEATURE_WORKFLOW.md](docs/FEATURE_WORKFLOW.md)
+
+### Quick Start
+
+1. One-time setup: Create Claude.ai Project ([Setup Guide](docs/FEATURE_WORKFLOW.md#one-time-setup))
+2. Describe your feature in the Project
+3. Get an optimized Claude Code prompt
+4. Run in Claude Code using plan mode
+5. Ship
+
+**Example:**
+```
+Claude.ai Project: "Add user subscription tiers with Stripe"
+          ↓
+Generated Prompt (copied to Claude Code)
+          ↓
+Claude Code: Uses plan mode, implements following boilerplate patterns
+          ↓
+Production-ready code
+```
+
 ## Available Commands
 
 ### Docker Commands

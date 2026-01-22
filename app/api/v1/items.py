@@ -1,10 +1,54 @@
 """
-Item API endpoints.
+Item API endpoints - Complete CRUD example.
 
-# =============================================================================
-# EXAMPLE: Complete CRUD API for Items.
-# Use this as a template for your own resource endpoints.
-# =============================================================================
+Provides full CRUD operations for items with ownership-based authorization.
+Use this as a template for creating endpoints for your own resources.
+
+Key components:
+    - POST /items/: Create item (owned by current user)
+    - GET /items/: List items (own for users, all for admins)
+    - GET /items/{id}: Get single item
+    - PATCH /items/{id}: Update item (owner or admin)
+    - DELETE /items/{id}: Delete item (owner or admin, soft delete)
+
+Dependencies:
+    - app.services.item_service: Item business logic
+    - app.schemas.item: Request/response schemas
+    - app.api.deps: CurrentUser, ItemSvc
+
+Related files:
+    - app/services/item_service.py: Business logic
+    - app/schemas/item.py: Pydantic schemas
+    - app/repositories/item_repo.py: Data access
+    - app/models/postgres/item.py: Item model
+
+Common commands:
+    - Test: uv run pytest tests/integration/ -k "item" -v
+    - Try: http://localhost:8000/docs#/items
+
+Example:
+    Create item::
+
+        curl -X POST http://localhost:8000/api/v1/items/ \\
+            -H "Authorization: Bearer <token>" \\
+            -H "Content-Type: application/json" \\
+            -d '{"title": "My Item", "description": "Description"}'
+
+    List items::
+
+        curl http://localhost:8000/api/v1/items/?skip=0&limit=20 \\
+            -H "Authorization: Bearer <token>"
+
+    Update item::
+
+        curl -X PATCH http://localhost:8000/api/v1/items/{id} \\
+            -H "Authorization: Bearer <token>" \\
+            -d '{"title": "New Title"}'
+
+    Delete item::
+
+        curl -X DELETE http://localhost:8000/api/v1/items/{id} \\
+            -H "Authorization: Bearer <token>"
 """
 from uuid import UUID
 

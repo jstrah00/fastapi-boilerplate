@@ -1,10 +1,64 @@
 """
 User service with business logic.
 
-# =============================================================================
-# SERVICE LAYER: Contains business logic for user operations.
-# Services use repositories for data access and enforce business rules.
-# =============================================================================
+Contains business logic for user management operations including CRUD,
+password changes, and role management with proper authorization checks.
+
+Key components:
+    - UserService: Service class for user operations
+    - get_user_by_id: Retrieve user with not-found handling
+    - get_user_by_email: Retrieve user by email
+    - create_user: Create new user with duplicate check
+    - update_user: Update user info with authorization
+    - change_password: Change password with current password verification
+    - deactivate_user: Soft delete user (admin only)
+    - update_user_role: Update role and permissions (requires USERS_UPDATE)
+
+Dependencies:
+    - app.repositories.user_repo: User data access
+    - app.common.security: Password hashing
+    - app.common.exceptions: Business error types
+    - app.common.permissions: Permission checking
+
+Related files:
+    - app/api/v1/users.py: User API endpoints
+    - app/repositories/user_repo.py: Data access layer
+    - app/schemas/user.py: Request/response schemas
+    - app/common/permissions.py: RBAC definitions
+
+Common commands:
+    - Test: uv run pytest tests/ -k "user"
+
+Example:
+    Creating a user::
+
+        user_service = UserService(user_repo)
+
+        user = await user_service.create_user(UserCreate(
+            email="new@example.com",
+            first_name="John",
+            last_name="Doe",
+            password="secure123",
+            role="user"
+        ))
+        # Raises AlreadyExistsError if email taken
+
+    Updating with authorization::
+
+        updated = await user_service.update_user(
+            user_id=target_id,
+            update_data=UserUpdate(first_name="Jane"),
+            current_user=requesting_user  # Must be self or admin
+        )
+
+    Password change::
+
+        await user_service.change_password(
+            user_id=user.id,
+            current_password="oldpass",
+            new_password="newpass"
+        )
+        # Raises ValidationError if current_password is wrong
 """
 from uuid import UUID
 

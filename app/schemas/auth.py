@@ -1,9 +1,50 @@
 """
 Pydantic schemas for authentication endpoints.
 
-# =============================================================================
-# AUTH SCHEMAS: Token and login DTOs.
-# =============================================================================
+Defines request/response DTOs for authentication operations including
+login, token refresh, and JWT token structure.
+
+Key components:
+    - LoginRequest: Email and password for login
+    - Token: Access and refresh token response
+    - TokenPayload: Decoded JWT token structure
+    - RefreshTokenRequest: Refresh token for getting new access token
+
+Dependencies:
+    - pydantic: Data validation and serialization
+    - email-validator: Email validation
+
+Related files:
+    - app/services/auth_service.py: Authentication business logic
+    - app/api/v1/auth.py: Authentication endpoints
+    - app/common/security.py: Token creation and validation
+
+Common commands:
+    - Test: uv run pytest tests/integration/test_auth.py -v
+
+Example:
+    Login request::
+
+        # POST /api/v1/auth/login
+        {
+            "email": "user@example.com",
+            "password": "password123"
+        }
+
+    Token response::
+
+        {
+            "access_token": "eyJ...",
+            "refresh_token": "eyJ...",
+            "token_type": "bearer"
+        }
+
+    Refresh token::
+
+        # POST /api/v1/auth/refresh
+        {
+            "refresh_token": "eyJ..."
+        }
 """
 from pydantic import BaseModel, EmailStr
 

@@ -1,11 +1,54 @@
 """
-Item model for PostgreSQL - CRUD Example.
+Item model for PostgreSQL - CRUD resource example.
 
-# =============================================================================
-# EXAMPLE MODEL: This demonstrates a simple CRUD resource model.
-# Use this as a template for creating your own domain models.
-# You can rename or delete this file based on your project needs.
-# =============================================================================
+Demonstrates a standard CRUD resource with ownership, soft delete, and timestamps.
+Use this as a template for creating your own domain models.
+
+Key components:
+    - Item: SQLAlchemy model for a user-owned resource
+    - owner_id: Foreign key linking to users table
+    - status: Soft delete support (active/inactive)
+    - created_at/updated_at: Automatic timestamps
+
+Dependencies:
+    - sqlalchemy: ORM and column types
+    - app.db.postgres: Base class for models
+
+Related files:
+    - app/schemas/item.py: Pydantic schemas for API
+    - app/repositories/item_repo.py: Data access methods
+    - app/services/item_service.py: Business logic
+    - app/api/v1/items.py: API endpoints
+
+Common commands:
+    - Create migration: uv run alembic revision --autogenerate -m "update items"
+    - Apply migration: uv run alembic upgrade head
+
+Example:
+    Creating an item::
+
+        from app.models.postgres.item import Item
+
+        item = Item(
+            title="My Item",
+            description="Item description",
+            owner_id=user.id,
+            status="active",
+        )
+        session.add(item)
+        await session.commit()
+
+    Querying items::
+
+        from sqlalchemy import select
+
+        # Get active items for a user
+        result = await session.execute(
+            select(Item)
+            .where(Item.owner_id == user_id)
+            .where(Item.status == "active")
+        )
+        items = result.scalars().all()
 """
 from datetime import datetime, UTC
 from uuid import UUID, uuid4

@@ -1,16 +1,50 @@
 """
 MongoDB database configuration using Motor (async) and Beanie ODM.
 
-# =============================================================================
-# MONGODB CONFIGURATION
-#
-# NOTE: If your project only needs PostgreSQL, you can safely delete:
-# - This file (app/db/mongodb.py)
-# - The app/models/mongodb/ folder
-# - MongoDB dependencies from pyproject.toml (motor, beanie, pymongo)
-# - MongoDB service from docker-compose.yml
-# - MongoDB initialization from app/main.py
-# =============================================================================
+Provides async MongoDB client, database instance, and Beanie ODM initialization
+for document-based data storage with flexible schemas.
+
+Key components:
+    - mongodb_client: Global Motor async client instance
+    - mongodb_db: Global database instance
+    - get_mongodb_client: Get the initialized client
+    - get_mongodb_database: Get the initialized database
+    - init_mongodb: Initialize connection and Beanie ODM
+    - close_mongodb: Clean up connections on shutdown
+
+Dependencies:
+    - motor: Async MongoDB driver
+    - beanie: Async ODM for MongoDB (Pydantic-based)
+    - pymongo: MongoDB Python driver (used by motor)
+    - app.config: MongoDB URL and pool settings
+
+Related files:
+    - app/config.py: MONGODB_URL, MONGODB_DB settings
+    - app/models/mongodb/: Beanie document definitions
+    - app/main.py: Calls init_mongodb() on startup
+
+Common commands:
+    - Start MongoDB: docker compose up -d mongodb
+    - Mongo shell: docker compose exec mongodb mongosh -u app_admin -p app_mongo_password
+    - Mongo Express UI: http://localhost:8081 (with --profile tools)
+
+Example:
+    Using Beanie documents::
+
+        from app.models.mongodb.document import ExampleDocument
+
+        # Create document
+        doc = ExampleDocument(name="Test", data={"key": "value"})
+        await doc.insert()
+
+        # Query documents
+        docs = await ExampleDocument.find(
+            ExampleDocument.status == "active"
+        ).to_list()
+
+Note:
+    If your project only needs PostgreSQL, you can safely delete this file,
+    the app/models/mongodb/ folder, and related dependencies.
 """
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase

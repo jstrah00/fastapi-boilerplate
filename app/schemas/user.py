@@ -1,10 +1,55 @@
 """
 Pydantic schemas for User API endpoints.
 
-# =============================================================================
-# SCHEMAS: Request/Response DTOs for the User API.
-# Customize these based on your authentication requirements.
-# =============================================================================
+Defines request/response DTOs (Data Transfer Objects) for user-related API
+operations including creation, updates, and responses.
+
+Key components:
+    - UserBase: Common fields shared across schemas
+    - UserCreate: Request schema for creating users
+    - UserUpdate: Request schema for updating user info
+    - UserRoleUpdate: Request schema for updating role/permissions
+    - UserPasswordUpdate: Request schema for changing password
+    - UserResponse: Response schema with user data (no password)
+    - UserListResponse: Paginated list response
+
+Dependencies:
+    - pydantic: Data validation and serialization
+    - email-validator: Email validation
+
+Related files:
+    - app/models/postgres/user.py: User model these schemas map to
+    - app/services/user_service.py: Uses these for input validation
+    - app/api/v1/users.py: API endpoints using these schemas
+
+Common commands:
+    - Test validation: Use Swagger UI at /docs to test request bodies
+
+Example:
+    Creating a user via API::
+
+        # POST /api/v1/users/
+        {
+            "email": "user@example.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "password": "securepassword123",
+            "role": "user"
+        }
+
+    Response::
+
+        {
+            "id": "uuid-here",
+            "email": "user@example.com",
+            "first_name": "John",
+            "last_name": "Doe",
+            "status": "active",
+            "role": "user",
+            "is_admin": false,
+            "created_at": "2024-01-15T10:30:00Z",
+            "updated_at": "2024-01-15T10:30:00Z"
+        }
 """
 from datetime import datetime
 from uuid import UUID

@@ -1,14 +1,43 @@
 """
 Structured logging configuration using structlog.
 
-# =============================================================================
-# LOGGING: Configures structured logging for the application.
-#
-# Features:
-# - JSON output in production (for CloudWatch/ELK)
-# - Pretty console output in development
-# - Automatic sensitive data censoring
-# =============================================================================
+Provides application-wide logging with environment-aware output formatting,
+automatic context enrichment, and sensitive data censoring.
+
+Key components:
+    - configure_logging: Initialize structlog with appropriate processors
+    - get_logger: Get a configured logger instance for a module
+    - add_app_context: Processor that adds app name, version, environment
+    - censor_sensitive_data: Processor that redacts passwords, tokens, etc.
+
+Dependencies:
+    - structlog: Structured logging library
+    - app.config: Environment and log level settings
+
+Related files:
+    - app/config.py: LOG_LEVEL, ENVIRONMENT settings
+    - app/main.py: Calls configure_logging() on startup
+    - All modules: Use get_logger(__name__) for logging
+
+Common commands:
+    - View logs: docker compose logs -f api
+    - Change level: Set LOG_LEVEL=DEBUG in .env
+
+Example:
+    Using the logger in a module::
+
+        from app.common.logging import get_logger
+
+        logger = get_logger(__name__)
+
+        # Event-based logging with structured data
+        logger.info("user_login", user_id=str(user.id), email=user.email)
+        logger.warning("rate_limit_exceeded", ip_address=request.client.host)
+        logger.error("payment_failed", order_id=str(order.id), error=str(e))
+
+Output formats:
+    - Development: Colored console output for readability
+    - Production: JSON output for log aggregation (CloudWatch, ELK, etc.)
 """
 import logging
 import sys

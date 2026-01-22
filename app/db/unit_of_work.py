@@ -1,20 +1,52 @@
 """
 Unit of Work pattern for coordinating transactions across PostgreSQL and MongoDB.
 
-# =============================================================================
-# UNIT OF WORK PATTERN
-#
-# NOTE: The Unit of Work is only necessary if your project uses BOTH databases
-# (PostgreSQL + MongoDB) and needs coordinated transactions between them.
-#
-# If your project only uses ONE database, you can safely:
-# 1. Delete this file
-# 2. Use regular database sessions directly in your services
-#
-# When to use Unit of Work:
-# - Creating a user in PostgreSQL and a document in MongoDB together
-# - Operations that must succeed or fail as a unit across databases
-# =============================================================================
+Provides a context manager that manages transactions across both databases,
+ensuring atomic operations that either fully commit or fully rollback.
+
+Key components:
+    - UnitOfWork: Context manager for cross-database transactions
+    - postgres_session: SQLAlchemy async session for PostgreSQL
+    - mongo_session: Motor session for MongoDB transactions
+    - commit: Commit both database transactions
+    - rollback: Rollback both database transactions
+
+Dependencies:
+    - sqlalchemy.ext.asyncio: Async SQLAlchemy sessions
+    - motor.motor_asyncio: Async MongoDB sessions
+    - app.db.postgres: PostgreSQL session factory
+    - app.db.mongodb: MongoDB client
+
+Related files:
+    - app/db/postgres.py: PostgreSQL session management
+    - app/db/mongodb.py: MongoDB client management
+    - app/services/: Services that may use UnitOfWork
+
+Common commands:
+    - Test: uv run pytest tests/ -k "unit_of_work"
+
+Example:
+    Cross-database atomic operation::
+
+        from app.db.unit_of_work import UnitOfWork
+
+        async with UnitOfWork() as uow:
+            # PostgreSQL operation
+            user = User(email="test@example.com")
+            uow.postgres_session.add(user)
+
+            # MongoDB operation
+            await uow.mongo_db["documents"].insert_one({
+                "user_id": str(user.id),
+                "data": {"key": "value"}
+            })
+
+            # Both commit together or both rollback
+            await uow.commit()
+
+Note:
+    Only necessary if using BOTH databases and need coordinated transactions.
+    If using only one database, use regular sessions directly in services.
 """
 from typing import Any
 

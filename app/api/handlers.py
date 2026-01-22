@@ -1,10 +1,51 @@
 """
 Exception handlers for FastAPI application.
 
-# =============================================================================
-# EXCEPTION HANDLERS: Global error handling for the API.
-# Converts exceptions to appropriate HTTP responses.
-# =============================================================================
+Provides global exception handling that converts application exceptions to
+appropriate HTTP responses, with logging and optional Telegram alerts.
+
+Key components:
+    - app_exception_handler: Handles AppException and subclasses
+    - validation_exception_handler: Handles Pydantic validation errors
+    - general_exception_handler: Catches all unhandled exceptions (bugs)
+
+Dependencies:
+    - fastapi: Request, Response types
+    - app.common.exceptions: Exception hierarchy
+    - app.common.alerts: Telegram notifications
+    - app.common.logging: Structured logging
+
+Related files:
+    - app/main.py: Registers these handlers
+    - app/common/exceptions.py: Exception class definitions
+    - app/common/alerts.py: Telegram alert service
+
+Common commands:
+    - Test: Trigger errors via API and check logs/alerts
+
+Example:
+    Exception to HTTP mapping::
+
+        AuthenticationError  ->  401 Unauthorized
+        AuthorizationError   ->  403 Forbidden
+        NotFoundError        ->  404 Not Found
+        AlreadyExistsError   ->  409 Conflict
+        ValidationError      ->  400 Bad Request
+        DatabaseError        ->  500 Internal Server Error
+        ExternalServiceError ->  503 Service Unavailable
+
+    Response format::
+
+        {
+            "error": "NotFoundError",
+            "message": "User not found",
+            "details": {"user_id": "abc-123"}
+        }
+
+Alert behavior:
+    - ExpectedError (business errors): Logged, no alert
+    - CriticalError (system errors): Logged + Telegram alert
+    - Unhandled Exception (bugs): Logged + Telegram alert (always)
 """
 from fastapi import Request, status
 from fastapi.responses import JSONResponse

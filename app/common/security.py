@@ -1,9 +1,45 @@
 """
 Security utilities for authentication.
 
-# =============================================================================
-# SECURITY: JWT token handling and password hashing.
-# =============================================================================
+Provides JWT token creation/validation and password hashing using industry-standard
+algorithms (bcrypt for passwords, HS256 for JWTs).
+
+Key components:
+    - get_password_hash: Hash a plain password with bcrypt
+    - verify_password: Verify a password against its hash
+    - create_access_token: Generate JWT access token (short-lived)
+    - create_refresh_token: Generate JWT refresh token (long-lived)
+    - decode_token: Decode and validate a JWT token
+
+Dependencies:
+    - python-jose[cryptography]: JWT encoding/decoding
+    - passlib[bcrypt]: Password hashing
+    - app.config: SECRET_KEY, token expiration settings
+
+Related files:
+    - app/config.py: SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES, etc.
+    - app/services/auth_service.py: Uses these for login/refresh
+    - app/api/deps.py: Uses decode_token for authentication
+
+Common commands:
+    - Generate secret: python -c "import secrets; print(secrets.token_hex(32))"
+    - Test: uv run pytest tests/unit/test_security.py -v
+
+Example:
+    Password hashing::
+
+        from app.common.security import get_password_hash, verify_password
+
+        hashed = get_password_hash("mypassword123")
+        is_valid = verify_password("mypassword123", hashed)  # True
+
+    Token creation::
+
+        from app.common.security import create_access_token, decode_token
+
+        token = create_access_token(subject=str(user.id))
+        payload = decode_token(token)
+        user_id = payload["sub"]  # UUID string
 """
 from datetime import datetime, timedelta, UTC
 from typing import Any

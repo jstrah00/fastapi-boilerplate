@@ -1,13 +1,55 @@
 """
 Custom exception classes for the application.
 
-# =============================================================================
-# EXCEPTIONS: Application-specific exception hierarchy.
-#
-# Two main categories:
-# 1. ExpectedError - Business logic errors (don't send alerts)
-# 2. CriticalError - System errors (send alerts)
-# =============================================================================
+Provides a hierarchical exception system that separates expected business errors
+from critical system errors, enabling appropriate handling and alerting.
+
+Key components:
+    - AppException: Base exception for all application errors
+    - ExpectedError: Base for business logic errors (no alerts sent)
+        - AuthenticationError: Invalid credentials, expired tokens
+        - AuthorizationError: Insufficient permissions
+        - NotFoundError: Resource not found
+        - AlreadyExistsError: Duplicate resource (e.g., email already taken)
+        - ValidationError: Business rule violations
+    - CriticalError: Base for system errors (alerts sent)
+        - DatabaseError: Database operation failures
+        - ExternalServiceError: Third-party API failures
+    - should_send_alert: Determine if exception should trigger alert
+
+Dependencies:
+    - None (standalone module)
+
+Related files:
+    - app/api/handlers.py: Exception handlers that convert these to HTTP responses
+    - app/common/alerts.py: Telegram alerts for critical errors
+    - app/services/: Services raise these exceptions
+    - app/api/v1/: Routers catch and convert to HTTPException
+
+Common commands:
+    - Test: uv run pytest tests/ -k "exception"
+
+Example:
+    Raising exceptions in services::
+
+        from app.common.exceptions import NotFoundError, AlreadyExistsError
+
+        async def get_user(self, user_id: UUID) -> User:
+            user = await self.repo.get(user_id)
+            if not user:
+                raise NotFoundError(
+                    message="User not found",
+                    details={"user_id": str(user_id)}
+                )
+            return user
+
+        async def create_user(self, email: str) -> User:
+            if await self.repo.get_by_email(email):
+                raise AlreadyExistsError(
+                    message="User with this email already exists",
+                    details={"email": email}
+                )
+            ...
 """
 from typing import Any
 
