@@ -98,7 +98,7 @@ Upload `saas-context.md` to your Project.
 
 #### B. Boilerplate Documentation (Required)
 
-Upload the file [boilerplate-structure.md](prompts/boilerplate-structure.md) to your Project.
+Upload the file [backend-patterns.md](prompts/backend-patterns.md) to your Project.
 
 This file contains complete documentation of your FastAPI boilerplate architecture, patterns, and conventions.
 
@@ -213,7 +213,7 @@ Claude will remember this for future feature planning.
 
 If you change boilerplate patterns:
 
-1. Update [boilerplate-structure.md](prompts/boilerplate-structure.md)
+1. Update [backend-patterns.md](prompts/backend-patterns.md)
 2. Re-upload to your Project
 3. In Project chat: "I've updated the boilerplate structure documentation. Review the new patterns."
 
@@ -232,12 +232,12 @@ If you want to change how Claude generates prompts:
 ### "Claude isn't using boilerplate patterns"
 
 **Check:**
-- Is boilerplate-structure.md uploaded?
+- Is backend-patterns.md uploaded?
 - Are custom instructions configured?
 - Is "Use project knowledge" enabled?
 
 **Fix:**
-Re-upload boilerplate-structure.md and verify in chat:
+Re-upload backend-patterns.md and verify in chat:
 ```
 "Show me an example of a PostgreSQL model following our boilerplate patterns"
 ```
@@ -254,7 +254,7 @@ Add more detail to saas-context.md about your specific business rules and constr
 ### "Claude recommends wrong database choice"
 
 **Check:**
-- Does boilerplate-structure.md clearly explain when to use each database?
+- Does backend-patterns.md clearly explain when to use each database?
 
 **Fix:**
 In chat, provide context:
@@ -270,7 +270,7 @@ Based on our boilerplate guidelines, which database is appropriate?"
 All prompt and documentation files are in `docs/prompts/`:
 
 - **custom-instructions.md** - Custom instructions for Project
-- **boilerplate-structure.md** - Complete boilerplate documentation
+- **backend-patterns.md** - Complete boilerplate documentation
 - **EXAMPLE_USAGE.md** - Example feature planning sessions
 
 Upload these to your Claude.ai Project as described above.
@@ -282,7 +282,7 @@ Upload these to your Claude.ai Project as described above.
 After setup is complete:
 
 1. Read the [Feature Workflow Guide](../FEATURE_WORKFLOW.md)
-2. Review [Example Usage](EXAMPLE_USAGE.md)
+2. Review [Example Usage](prompts/EXAMPLE_USAGE.md)
 3. Try implementing a simple feature to test the workflow
 4. Install the feature-from-plan skill in Claude Code
 

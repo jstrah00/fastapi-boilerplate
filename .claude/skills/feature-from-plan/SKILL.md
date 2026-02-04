@@ -376,5 +376,5 @@ This skill follows the boilerplate patterns. If patterns change:
 
 - Feature Workflow Guide: docs/FEATURE_WORKFLOW.md
 - Claude.ai Project Setup: docs/CLAUDE_PROJECT_SETUP.md
-- Example Prompts: docs/EXAMPLE_USAGE.md
-- Boilerplate Structure: docs/prompts/boilerplate-structure.md
+- Example Prompts: docs/prompts/EXAMPLE_USAGE.md
+- Boilerplate Structure: docs/prompts/backend-patterns.md

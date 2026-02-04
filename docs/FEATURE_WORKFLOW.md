@@ -101,7 +101,7 @@ Click "Add Content" and upload these files:
 [List important constraints, validation rules, workflows]
 ```
 
-**2. Boilerplate Documentation** - Copy content from [prompts/boilerplate-structure.md](prompts/boilerplate-structure.md)
+**2. Boilerplate Documentation** - Copy content from [prompts/backend-patterns.md](prompts/backend-patterns.md)
 
 **3. Example Features** (optional) - Add examples of well-implemented features
 
@@ -299,7 +299,7 @@ See [.claude/skills/feature-from-plan/SKILL.md](../.claude/skills/feature-from-p
 
 ## Examples
 
-For detailed examples of the two-stage workflow in action, see [EXAMPLE_USAGE.md](EXAMPLE_USAGE.md).
+For detailed examples of the two-stage workflow in action, see [prompts/EXAMPLE_USAGE.md](prompts/EXAMPLE_USAGE.md).
 
 Examples included:
 - **Simple CRUD** - Tags feature (PostgreSQL)
@@ -429,7 +429,7 @@ Provide more context in Claude.ai Project:
 
 **Solution:**
 1. Update project knowledge with examples of well-implemented features
-2. Document pattern changes in boilerplate-structure.md
+2. Document pattern changes in backend-patterns.md
 3. Be explicit in custom instructions about conventions
 
 ### "Prompt too long for Claude Code"
@@ -506,8 +506,8 @@ After generating implementation prompts, also generate:
 
 ## Need Help?
 
-- Review [example prompts](EXAMPLE_USAGE.md)
-- Check [boilerplate structure documentation](prompts/boilerplate-structure.md)
+- Review [example prompts](prompts/EXAMPLE_USAGE.md)
+- Check [boilerplate structure documentation](prompts/backend-patterns.md)
 - Examine existing features in codebase
 - Update saas-context.md as project evolves
 - Use skill-creator for custom workflows

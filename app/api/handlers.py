@@ -144,10 +144,27 @@ async def validation_exception_handler(
 
     These are client errors (invalid input), so no alerts needed.
     """
+    # Sanitize errors to ensure JSON serializability
+    sanitized_errors = []
+    for error in exc.errors():
+        sanitized_error = {}
+        for key, value in error.items():
+            # Convert bytes to string
+            if isinstance(value, bytes):
+                sanitized_error[key] = value.decode('utf-8', errors='replace')
+            # Handle nested structures
+            elif isinstance(value, (list, tuple)):
+                sanitized_error[key] = [
+                    v.decode('utf-8', errors='replace') if isinstance(v, bytes) else v
+                    for v in value
+                ]
+            else:
+                sanitized_error[key] = value
+        sanitized_errors.append(sanitized_error)
+
     logger.warning(
         "validation_error",
-        errors=exc.errors(),
-        body=exc.body,
+        errors=sanitized_errors,
         path=request.url.path,
     )
 
@@ -156,7 +173,7 @@ async def validation_exception_handler(
         content={
             "error": "ValidationError",
             "message": "Request validation failed",
-            "details": exc.errors(),
+            "details": sanitized_errors,
         },
     )
 
