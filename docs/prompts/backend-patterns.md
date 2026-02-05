@@ -10,61 +10,61 @@ Upload this file to your Claude.ai Project as project knowledge.
 ```
 app/
 ├── api/
-│   ├── v1/
-│   │   ├── auth.py          # JWT authentication endpoints
-│   │   ├── users.py         # User CRUD
-│   │   └── items.py         # Example resource
-│   ├── deps.py              # Dependency injection functions
-│   └── handlers.py          # Global exception handlers
+│ ├── v1/
+│ │ ├── auth.py # JWT authentication endpoints
+│ │ ├── users.py # User CRUD
+│ │ └── items.py # Example resource
+│ ├── deps.py # Dependency injection functions
+│ └── handlers.py # Global exception handlers
 │
 ├── common/
-│   ├── exceptions.py        # Custom exception classes
-│   ├── logging.py           # Structured logging (structlog)
-│   ├── permissions.py       # RBAC: Permission enum, Role enum, ROLE_PERMISSIONS
-│   ├── security.py          # JWT creation, password hashing
-│   └── alerts.py            # Telegram alerts (optional)
+│ ├── exceptions.py # Custom exception classes
+│ ├── logging.py # Structured logging (structlog)
+│ ├── permissions.py # RBAC: Permission enum, Role enum, ROLE_PERMISSIONS
+│ ├── security.py # JWT creation, password hashing
+│ └── alerts.py # Telegram alerts (optional)
 │
 ├── db/
-│   ├── postgres.py          # PostgreSQL AsyncEngine, async_session_maker
-│   ├── mongodb.py           # MongoDB client, Beanie initialization
-│   └── unit_of_work.py      # Cross-database transaction management
+│ ├── postgres.py # PostgreSQL AsyncEngine, async_session_maker
+│ ├── mongodb.py # MongoDB client, Beanie initialization
+│ └── unit_of_work.py # Cross-database transaction management
 │
 ├── models/
-│   ├── postgres/
-│   │   ├── user.py          # User model (SQLAlchemy)
-│   │   └── item.py          # Item model (example)
-│   └── mongodb/
-│       └── document.py      # Example Beanie document
+│ ├── postgres/
+│ │ ├── user.py # User model (SQLAlchemy)
+│ │ └── item.py # Item model (example)
+│ └── mongodb/
+│ └── document.py # Example Beanie document
 │
 ├── repositories/
-│   ├── base.py              # BaseRepository with generic CRUD
-│   ├── user_repo.py         # UserRepository
-│   └── item_repo.py         # ItemRepository
+│ ├── base.py # BaseRepository with generic CRUD
+│ ├── user_repo.py # UserRepository
+│ └── item_repo.py # ItemRepository
 │
 ├── schemas/
-│   ├── auth.py              # Login, Token, TokenRefresh DTOs
-│   ├── user.py              # UserCreate, UserUpdate, UserResponse
-│   └── item.py              # Item DTOs
+│ ├── auth.py # Login, Token, TokenRefresh DTOs
+│ ├── user.py # UserCreate, UserUpdate, UserResponse
+│ └── item.py # Item DTOs
 │
 ├── services/
-│   ├── auth_service.py      # Authentication logic
-│   ├── user_service.py      # User business logic
-│   └── item_service.py      # Item business logic
+│ ├── auth_service.py # Authentication logic
+│ ├── user_service.py # User business logic
+│ └── item_service.py # Item business logic
 │
-├── config.py                # Pydantic Settings (env vars)
-└── main.py                  # FastAPI app, CORS, middleware, routers
+├── config.py # Pydantic Settings (env vars)
+└── main.py # FastAPI app, CORS, middleware, routers
 
 tests/
-├── conftest.py              # Pytest fixtures (client, db, auth)
-├── unit/                    # Unit tests (isolated)
-└── integration/             # Integration tests (full stack)
+├── conftest.py # Pytest fixtures (client, db, auth)
+├── unit/ # Unit tests (isolated)
+└── integration/ # Integration tests (full stack)
 
 alembic/
-├── env.py                   # Alembic config (imports all models)
-└── versions/                # Migration files
+├── env.py # Alembic config (imports all models)
+└── versions/ # Migration files
 
 scripts/
-└── init_db.py               # Initialize DB with admin user
+└── init_db.py # Initialize DB with admin user
 ```
 
 ## Key Patterns
@@ -76,15 +76,15 @@ from sqlalchemy.orm import relationship
 from app.db.postgres import Base
 
 class Example(Base):
-    __tablename__ = "examples"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, index=True)
-    is_active = Column(Boolean, default=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    
-    # Relationships (always bidirectional)
-    user = relationship("User", back_populates="examples")
+ __tablename__ = "examples"
+ 
+ id = Column(Integer, primary_key=True, index=True)
+ name = Column(String, nullable=False, index=True)
+ is_active = Column(Boolean, default=True)
+ user_id = Column(Integer, ForeignKey("users.id"))
+ 
+ # Relationships (always bidirectional)
+ user = relationship("User", back_populates="examples")
 ```
 
 Key conventions:
@@ -101,14 +101,14 @@ from pydantic import Field
 from datetime import datetime, timezone
 
 class ExampleDocument(Document):
-    name: str
-    user_id: str  # Reference to PostgreSQL user (no FK)
-    metadata: dict = Field(default_factory=dict)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    class Settings:
-        name = "examples"  # Collection name
-        indexes = ["user_id", "created_at"]
+ name: str
+ user_id: str # Reference to PostgreSQL user (no FK)
+ metadata: dict = Field(default_factory=dict)
+ created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+ 
+ class Settings:
+ name = "examples" # Collection name
+ indexes = ["user_id", "created_at"]
 ```
 
 Key conventions:
@@ -123,23 +123,23 @@ Key conventions:
 from pydantic import BaseModel, Field, validator
 
 class ExampleBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
-    description: str | None = None
+ name: str = Field(..., min_length=1, max_length=100)
+ description: str | None = None
 
 class ExampleCreate(ExampleBase):
-    user_id: int
+ user_id: int
 
 class ExampleUpdate(BaseModel):
-    name: str | None = None
-    description: str | None = None
+ name: str | None = None
+ description: str | None = None
 
 class ExampleResponse(ExampleBase):
-    id: int
-    user_id: int
-    is_active: bool
-    
-    class Config:
-        from_attributes = True  # For SQLAlchemy models
+ id: int
+ user_id: int
+ is_active: bool
+ 
+ class Config:
+ from_attributes = True # For SQLAlchemy models
 ```
 
 Key conventions:
@@ -158,14 +158,14 @@ from app.repositories.base import BaseRepository
 from app.models.postgres.example import Example
 
 class ExampleRepository(BaseRepository[Example]):
-    def __init__(self, session: AsyncSession):
-        super().__init__(Example, session)
-    
-    async def get_by_user(self, user_id: int) -> list[Example]:
-        result = await self.session.execute(
-            select(Example).where(Example.user_id == user_id)
-        )
-        return result.scalars().all()
+ def __init__(self, session: AsyncSession):
+ super().__init__(Example, session)
+ 
+ async def get_by_user(self, user_id: int) -> list[Example]:
+ result = await self.session.execute(
+ select(Example).where(Example.user_id == user_id)
+ )
+ return result.scalars().all()
 ```
 
 MongoDB Repository:
@@ -173,15 +173,15 @@ MongoDB Repository:
 from app.models.mongodb.example import ExampleDocument
 
 class ExampleMongoRepository:
-    async def get_by_user(self, user_id: str) -> list[ExampleDocument]:
-        return await ExampleDocument.find(
-            ExampleDocument.user_id == user_id
-        ).to_list()
-    
-    async def create(self, data: dict) -> ExampleDocument:
-        doc = ExampleDocument(**data)
-        await doc.insert()
-        return doc
+ async def get_by_user(self, user_id: str) -> list[ExampleDocument]:
+ return await ExampleDocument.find(
+ ExampleDocument.user_id == user_id
+ ).to_list()
+ 
+ async def create(self, data: dict) -> ExampleDocument:
+ doc = ExampleDocument(**data)
+ await doc.insert()
+ return doc
 ```
 
 Key conventions:
@@ -198,20 +198,20 @@ from app.schemas.example import ExampleCreate, ExampleUpdate
 from app.common.exceptions import NotFoundError
 
 class ExampleService:
-    def __init__(self, session: AsyncSession):
-        self.repo = ExampleRepository(session)
-    
-    async def create_example(self, data: ExampleCreate) -> Example:
-        # Business logic here
-        # Validation
-        # Error handling
-        return await self.repo.create(data.model_dump())
-    
-    async def get_example(self, example_id: int) -> Example:
-        example = await self.repo.get(example_id)
-        if not example:
-            raise NotFoundError(f"Example {example_id} not found")
-        return example
+ def __init__(self, session: AsyncSession):
+ self.repo = ExampleRepository(session)
+ 
+ async def create_example(self, data: ExampleCreate) -> Example:
+ # Business logic here
+ # Validation
+ # Error handling
+ return await self.repo.create(data.model_dump())
+ 
+ async def get_example(self, example_id: int) -> Example:
+ example = await self.repo.get(example_id)
+ if not example:
+ raise NotFoundError(f"Example {example_id} not found")
+ return example
 ```
 
 Key conventions:
@@ -235,22 +235,22 @@ router = APIRouter(prefix="/examples", tags=["examples"])
 
 @router.post("/", response_model=ExampleResponse)
 async def create_example(
-    data: ExampleCreate,
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_permissions(Permission.EXAMPLES_CREATE))
+ data: ExampleCreate,
+ session: AsyncSession = Depends(get_db),
+ current_user: User = Depends(require_permissions(Permission.EXAMPLES_CREATE))
 ):
-    service = ExampleService(session)
-    example = await service.create_example(data)
-    return example
+ service = ExampleService(session)
+ example = await service.create_example(data)
+ return example
 
 @router.get("/{example_id}", response_model=ExampleResponse)
 async def get_example(
-    example_id: int,
-    session: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+ example_id: int,
+ session: AsyncSession = Depends(get_db),
+ current_user: User = Depends(get_current_user)
 ):
-    service = ExampleService(session)
-    return await service.get_example(example_id)
+ service = ExampleService(session)
+ return await service.get_example(example_id)
 ```
 
 Key conventions:
@@ -265,32 +265,32 @@ Key conventions:
 from enum import Enum
 
 class Permission(str, Enum):
-    # User permissions
-    USERS_READ = "users:read"
-    USERS_CREATE = "users:create"
-    USERS_UPDATE = "users:update"
-    USERS_DELETE = "users:delete"
-    
-    # Example permissions
-    EXAMPLES_READ = "examples:read"
-    EXAMPLES_CREATE = "examples:create"
+ # User permissions
+ USERS_READ = "users:read"
+ USERS_CREATE = "users:create"
+ USERS_UPDATE = "users:update"
+ USERS_DELETE = "users:delete"
+ 
+ # Example permissions
+ EXAMPLES_READ = "examples:read"
+ EXAMPLES_CREATE = "examples:create"
 
 class Role(str, Enum):
-    ADMIN = "admin"
-    USER = "user"
+ ADMIN = "admin"
+ USER = "user"
 
 ROLE_PERMISSIONS = {
-    Role.ADMIN: {
-        Permission.USERS_READ,
-        Permission.USERS_CREATE,
-        Permission.USERS_UPDATE,
-        Permission.USERS_DELETE,
-        Permission.EXAMPLES_READ,
-        Permission.EXAMPLES_CREATE,
-    },
-    Role.USER: {
-        Permission.EXAMPLES_READ,
-    },
+ Role.ADMIN: {
+ Permission.USERS_READ,
+ Permission.USERS_CREATE,
+ Permission.USERS_UPDATE,
+ Permission.USERS_DELETE,
+ Permission.EXAMPLES_READ,
+ Permission.EXAMPLES_CREATE,
+ },
+ Role.USER: {
+ Permission.EXAMPLES_READ,
+ },
 }
 ```
 
@@ -298,9 +298,9 @@ Usage in endpoints:
 ```python
 @router.get("/admin/users")
 async def admin_list_users(
-    current_user: User = Depends(require_permissions(Permission.USERS_READ))
+ current_user: User = Depends(require_permissions(Permission.USERS_READ))
 ):
-    ...
+ ...
 ```
 
 ### 8. Unit of Work (Cross-Database Transactions)
@@ -308,17 +308,17 @@ async def admin_list_users(
 from app.db.unit_of_work import UnitOfWork
 
 async def create_user_with_profile(user_data: dict, profile_data: dict):
-    async with UnitOfWork() as uow:
-        # PostgreSQL operation
-        user = await uow.user_repo.create(user_data)
-        
-        # MongoDB operation
-        profile_data["user_id"] = str(user.id)
-        await uow.profile_repo.create(profile_data)
-        
-        # Commit both
-        await uow.commit()
-    return user
+ async with UnitOfWork() as uow:
+ # PostgreSQL operation
+ user = await uow.user_repo.create(user_data)
+ 
+ # MongoDB operation
+ profile_data["user_id"] = str(user.id)
+ await uow.profile_repo.create(profile_data)
+ 
+ # Commit both
+ await uow.commit()
+ return user
 ```
 
 When to use:
@@ -333,30 +333,30 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_create_example(
-    client: AsyncClient,
-    test_user,
-    auth_headers
+ client: AsyncClient,
+ test_user,
+ auth_headers
 ):
-    response = await client.post(
-        "/api/v1/examples/",
-        json={"name": "Test", "user_id": test_user.id},
-        headers=auth_headers
-    )
-    assert response.status_code == 200
-    assert response.json()["name"] == "Test"
+ response = await client.post(
+ "/api/v1/examples/",
+ json={"name": "Test", "user_id": test_user.id},
+ headers=auth_headers
+ )
+ assert response.status_code == 200
+ assert response.json()["name"] == "Test"
 
 @pytest.mark.asyncio
 async def test_create_example_permission_denied(
-    client: AsyncClient,
-    test_user_no_perms,
-    auth_headers_no_perms
+ client: AsyncClient,
+ test_user_no_perms,
+ auth_headers_no_perms
 ):
-    response = await client.post(
-        "/api/v1/examples/",
-        json={"name": "Test", "user_id": test_user_no_perms.id},
-        headers=auth_headers_no_perms
-    )
-    assert response.status_code == 403
+ response = await client.post(
+ "/api/v1/examples/",
+ json={"name": "Test", "user_id": test_user_no_perms.id},
+ headers=auth_headers_no_perms
+ )
+ assert response.status_code == 403
 ```
 
 Fixtures available (conftest.py):
@@ -370,24 +370,24 @@ Fixtures available (conftest.py):
 ## Common Commands
 ```bash
 # Development
-uv run dev                    # Start dev server
-uv run ipython               # Python shell
+uv run dev # Start dev server
+uv run ipython # Python shell
 
 # Database
-uv run alembic upgrade head                           # Apply migrations
-uv run alembic revision --autogenerate -m "message"  # Create migration
-uv run alembic downgrade -1                          # Revert migration
-uv run python scripts/init_db.py                     # Seed admin user
+uv run alembic upgrade head # Apply migrations
+uv run alembic revision --autogenerate -m "message" # Create migration
+uv run alembic downgrade -1 # Revert migration
+uv run python scripts/init_db.py # Seed admin user
 
 # Testing
-uv run test                  # Run all tests with coverage
+uv run test # Run all tests with coverage
 uv run pytest tests/unit -v # Unit tests only
-uv run pytest -k test_name  # Specific test
+uv run pytest -k test_name # Specific test
 
 # Code quality
 uv run ruff format app tests # Format code
-uv run ruff check app tests  # Lint
-uv run mypy app              # Type check
+uv run ruff check app tests # Lint
+uv run mypy app # Type check
 ```
 
 ## Examples to Reference

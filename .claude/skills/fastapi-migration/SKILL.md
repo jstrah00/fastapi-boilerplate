@@ -40,16 +40,16 @@ Edit or create your model in `app/models/postgres/{resource}.py`.
 ```python
 # Before
 class User(Base):
-    __tablename__ = "users"
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    email: Mapped[str] = mapped_column(String(255), unique=True)
+ __tablename__ = "users"
+ id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+ email: Mapped[str] = mapped_column(String(255), unique=True)
 
 # After - adding phone_number field
 class User(Base):
-    __tablename__ = "users"
-    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
-    email: Mapped[str] = mapped_column(String(255), unique=True)
-    phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)  # NEW
+ __tablename__ = "users"
+ id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+ email: Mapped[str] = mapped_column(String(255), unique=True)
+ phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True) # NEW
 ```
 
 ### Step 2: Register Model (for new models only)
@@ -58,8 +58,8 @@ If creating a new model, import it in `alembic/env.py`:
 
 ```python
 # alembic/env.py
-from app.models.postgres import user, item  # noqa: F401
-from app.models.postgres import your_new_model  # noqa: F401  # ADD THIS
+from app.models.postgres import user, item # noqa: F401
+from app.models.postgres import your_new_model # noqa: F401 # ADD THIS
 ```
 
 **CRITICAL**: Alembic can only detect models that are imported in env.py!
@@ -81,13 +81,13 @@ This creates a file in `alembic/versions/` like:
 # alembic/versions/2024_01_15_1430-abc123_add_phone_number_to_users.py
 
 def upgrade() -> None:
-    # Review these operations
-    op.add_column('users', sa.Column('phone_number', sa.String(20), nullable=True))
+ # Review these operations
+ op.add_column('users', sa.Column('phone_number', sa.String(20), nullable=True))
 
 
 def downgrade() -> None:
-    # Review these operations
-    op.drop_column('users', 'phone_number')
+ # Review these operations
+ op.drop_column('users', 'phone_number')
 ```
 
 **Check for:**
@@ -109,100 +109,100 @@ uv run alembic upgrade head
 
 ```python
 def upgrade() -> None:
-    op.add_column('users', sa.Column('phone_number', sa.String(20), nullable=True))
+ op.add_column('users', sa.Column('phone_number', sa.String(20), nullable=True))
 
 def downgrade() -> None:
-    op.drop_column('users', 'phone_number')
+ op.drop_column('users', 'phone_number')
 ```
 
 ### Adding a Non-Nullable Column (with default)
 
 ```python
 def upgrade() -> None:
-    # Step 1: Add column as nullable
-    op.add_column('users', sa.Column('status', sa.String(20), nullable=True))
+ # Step 1: Add column as nullable
+ op.add_column('users', sa.Column('status', sa.String(20), nullable=True))
 
-    # Step 2: Set default value for existing rows
-    op.execute("UPDATE users SET status = 'active' WHERE status IS NULL")
+ # Step 2: Set default value for existing rows
+ op.execute("UPDATE users SET status = 'active' WHERE status IS NULL")
 
-    # Step 3: Make column non-nullable
-    op.alter_column('users', 'status', nullable=False)
+ # Step 3: Make column non-nullable
+ op.alter_column('users', 'status', nullable=False)
 
 def downgrade() -> None:
-    op.drop_column('users', 'status')
+ op.drop_column('users', 'status')
 ```
 
 ### Adding an Index
 
 ```python
 def upgrade() -> None:
-    op.create_index('ix_users_email', 'users', ['email'], unique=True)
+ op.create_index('ix_users_email', 'users', ['email'], unique=True)
 
 def downgrade() -> None:
-    op.drop_index('ix_users_email', 'users')
+ op.drop_index('ix_users_email', 'users')
 ```
 
 ### Adding a Foreign Key
 
 ```python
 def upgrade() -> None:
-    op.add_column('items', sa.Column('category_id', postgresql.UUID(), nullable=True))
-    op.create_foreign_key(
-        'fk_items_category_id',
-        'items', 'categories',
-        ['category_id'], ['id'],
-        ondelete='SET NULL'
-    )
+ op.add_column('items', sa.Column('category_id', postgresql.UUID(), nullable=True))
+ op.create_foreign_key(
+ 'fk_items_category_id',
+ 'items', 'categories',
+ ['category_id'], ['id'],
+ ondelete='SET NULL'
+ )
 
 def downgrade() -> None:
-    op.drop_constraint('fk_items_category_id', 'items', type_='foreignkey')
-    op.drop_column('items', 'category_id')
+ op.drop_constraint('fk_items_category_id', 'items', type_='foreignkey')
+ op.drop_column('items', 'category_id')
 ```
 
 ### Creating a New Table
 
 ```python
 def upgrade() -> None:
-    op.create_table(
-        'categories',
-        sa.Column('id', postgresql.UUID(), primary_key=True),
-        sa.Column('name', sa.String(100), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    )
-    op.create_index('ix_categories_name', 'categories', ['name'])
+ op.create_table(
+ 'categories',
+ sa.Column('id', postgresql.UUID(), primary_key=True),
+ sa.Column('name', sa.String(100), nullable=False),
+ sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+ )
+ op.create_index('ix_categories_name', 'categories', ['name'])
 
 def downgrade() -> None:
-    op.drop_index('ix_categories_name', 'categories')
-    op.drop_table('categories')
+ op.drop_index('ix_categories_name', 'categories')
+ op.drop_table('categories')
 ```
 
 ### Renaming a Column
 
 ```python
 def upgrade() -> None:
-    op.alter_column('users', 'name', new_column_name='full_name')
+ op.alter_column('users', 'name', new_column_name='full_name')
 
 def downgrade() -> None:
-    op.alter_column('users', 'full_name', new_column_name='name')
+ op.alter_column('users', 'full_name', new_column_name='name')
 ```
 
 ### Changing Column Type
 
 ```python
 def upgrade() -> None:
-    # Change from String(100) to String(255)
-    op.alter_column(
-        'users', 'email',
-        type_=sa.String(255),
-        existing_type=sa.String(100),
-    )
+ # Change from String(100) to String(255)
+ op.alter_column(
+ 'users', 'email',
+ type_=sa.String(255),
+ existing_type=sa.String(100),
+ )
 
 def downgrade() -> None:
-    op.alter_column(
-        'users', 'email',
-        type_=sa.String(100),
-        existing_type=sa.String(255),
-    )
+ op.alter_column(
+ 'users', 'email',
+ type_=sa.String(100),
+ existing_type=sa.String(255),
+ )
 ```
 
 ## Troubleshooting
@@ -236,18 +236,18 @@ uv run alembic stamp head
 ### Autogenerate Doesn't Detect Changes
 
 1. **Model not imported in env.py** - Most common cause
-   ```python
-   # alembic/env.py
-   from app.models.postgres import your_model  # noqa: F401
-   ```
+ ```python
+ # alembic/env.py
+ from app.models.postgres import your_model # noqa: F401
+ ```
 
 2. **Model doesn't inherit from Base**
-   ```python
-   from app.db.postgres import Base
+ ```python
+ from app.db.postgres import Base
 
-   class YourModel(Base):  # Must inherit from Base
-       ...
-   ```
+ class YourModel(Base): # Must inherit from Base
+ ...
+ ```
 
 3. **Table already exists** - Alembic thinks it's already created
 
@@ -284,28 +284,28 @@ import sqlalchemy as sa
 from sqlalchemy.orm import Session
 
 def upgrade() -> None:
-    # Get connection
-    bind = op.get_bind()
-    session = Session(bind=bind)
+ # Get connection
+ bind = op.get_bind()
+ session = Session(bind=bind)
 
-    # Perform data migration
-    session.execute(sa.text("""
-        UPDATE users
-        SET role = 'admin'
-        WHERE email IN ('admin@example.com')
-    """))
-    session.commit()
+ # Perform data migration
+ session.execute(sa.text("""
+ UPDATE users
+ SET role = 'admin'
+ WHERE email IN ('admin@example.com')
+ """))
+ session.commit()
 
 def downgrade() -> None:
-    bind = op.get_bind()
-    session = Session(bind=bind)
+ bind = op.get_bind()
+ session = Session(bind=bind)
 
-    session.execute(sa.text("""
-        UPDATE users
-        SET role = 'user'
-        WHERE email IN ('admin@example.com')
-    """))
-    session.commit()
+ session.execute(sa.text("""
+ UPDATE users
+ SET role = 'user'
+ WHERE email IN ('admin@example.com')
+ """))
+ session.commit()
 ```
 
 ## Best Practices

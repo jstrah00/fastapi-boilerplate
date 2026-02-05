@@ -5,8 +5,8 @@
 uv sync && cp .env.example .env
 docker compose up -d postgres mongodb
 uv run alembic upgrade head
-uv run python scripts/init_db.py  # Creates admin@example.com / admin123
-uv run dev  # http://localhost:8000
+uv run python scripts/init_db.py # Creates admin@example.com / admin123
+uv run dev # http://localhost:8000
 ```
 
 ## Environment Configuration
@@ -14,22 +14,53 @@ uv run dev  # http://localhost:8000
 **Required variables** (edit `.env` after copying from `.env.example`):
 ```bash
 # Security (MUST change in production)
-SECRET_KEY=your-secret-key-here  # Generate with: openssl rand -hex 32
+SECRET_KEY=your-secret-key-here # Generate with: openssl rand -hex 32
 
 # Database URLs
 DATABASE_URL=postgresql://user:pass@localhost:5432/db_name
 MONGODB_URL=mongodb://localhost:27017/db_name
 
 # CORS (frontend URLs)
-CORS_ORIGINS=["http://localhost:5173"]  # JSON array format
+BACKEND_CORS_ORIGINS=["http://localhost:5173"] # JSON array format
 ```
 
-## Claude Code Skills (Use with @skill-name)
-- `@fastapi-endpoint` - Generate endpoints with dependencies
-- `@fastapi-model` - Create PostgreSQL/MongoDB models
-- `@fastapi-permission` - Add RBAC permissions
-- `@fastapi-migration` - Alembic migrations
-- `@fastapi-test` - Generate test files
+### CORS Configuration
+
+**Format**: JSON array of allowed origin URLs
+
+**Development**:
+```bash
+BACKEND_CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
+```
+
+**Production** (add ALL frontend domains):
+```bash
+BACKEND_CORS_ORIGINS=["https://app.yourdomain.com", "https://www.yourdomain.com"]
+```
+
+**Common Issues**:
+- [-] `BACKEND_CORS_ORIGINS=*` - Don't use wildcard in production (security risk)
+- [-] `BACKEND_CORS_ORIGINS=http://localhost:5173` - Missing array brackets
+- [-] Missing `https://` protocol - Must include protocol
+- [X] `BACKEND_CORS_ORIGINS=["http://localhost:5173"]` - Correct format
+
+**Testing CORS**:
+```bash
+# Should succeed if CORS configured
+curl -X OPTIONS http://localhost:8000/api/v1/users \
+ -H "Origin: http://localhost:5173" \
+ -H "Access-Control-Request-Method: GET"
+```
+
+## Claude Code Skills
+
+Use skills with `/skill-name` format:
+- `/fastapi-endpoint` - Generate endpoints with dependencies
+- `/fastapi-model` - Create PostgreSQL/MongoDB models
+- `/fastapi-permission` - Add RBAC permissions
+- `/fastapi-migration` - Alembic migrations
+- `/fastapi-test` - Generate test files
+- `/feature-from-plan` - Execute structured Claude.ai Project plan
 
 **IMPORTANT**: Always invoke relevant skill when creating features - they contain boilerplate-specific patterns.
 
@@ -68,12 +99,12 @@ and any important patterns or conventions it follows.
 
 ## Adding Feature: 7-Step Workflow
 
-**1. Model** → Invoke `@fastapi-model`
+**1. Model** → Use `/fastapi-model` skill
 - PostgreSQL: `app/models/postgres/your_model.py` with `Base`, ForeignKeys
 - MongoDB: `app/models/mongodb/your_doc.py` with `Document`, MUST set `Settings.name`
 - **MUST**: Start file with docstring describing model purpose
 
-**2. Migration** (PostgreSQL only) → Invoke `@fastapi-migration`
+**2. Migration** (PostgreSQL only) → Use `/fastapi-migration` skill
 ```bash
 uv run alembic revision --autogenerate -m "add table"
 # IMPORTANT: Review alembic/versions/ before applying
@@ -97,7 +128,7 @@ uv run alembic upgrade head
 - Password hashing happens here, NOT in models
 - **MUST**: Docstring explaining business logic
 
-**6. Endpoint** → Invoke `@fastapi-endpoint`
+**6. Endpoint** → Use `/fastapi-endpoint` skill
 ```python
 # app/api/v1/your_endpoint.py
 """API endpoints for YourResource management."""
@@ -113,11 +144,11 @@ router = APIRouter()
 
 @router.post("/", response_model=ResponseSchema)
 def create(
-    data: CreateSchema,
-    db: Session = Depends(get_db),  # MUST come before get_current_user
-    current_user: User = Depends(get_current_user)
+ data: CreateSchema,
+ db: Session = Depends(get_db), # MUST come before get_current_user
+ current_user: User = Depends(get_current_user)
 ):
-    # Instantiate repo → service → return
+ # Instantiate repo → service → return
 ```
 - **MUST**: Module docstring at top, describing API endpoints
 
@@ -125,12 +156,12 @@ def create(
 
 ---
 
-## RBAC: Add Permissions (Invoke @fastapi-permission)
+## RBAC: Add Permissions (Use /fastapi-permission skill)
 
 1. Add to `app/common/permissions.py`:
 ```python
 class Permission(str, Enum):
-    YOUR_RESOURCE_CREATE = "your_resource:create"
+ YOUR_RESOURCE_CREATE = "your_resource:create"
 ```
 
 2. Map to roles in `ROLE_PERMISSIONS`
@@ -144,7 +175,7 @@ class Permission(str, Enum):
 
 ---
 
-## Testing (Invoke @fastapi-test)
+## Testing (Use /fastapi-test skill)
 
 **ALWAYS run in this order:**
 ```bash
@@ -157,16 +188,16 @@ uv run pytest tests/integration -v
 
 Test structure: `tests/unit/services/test_your_service.py`
 ```python
-"""Tests for YourService business logic."""  # MUST have docstring
+"""Tests for YourService business logic.""" # MUST have docstring
 
 @pytest.fixture
 def service(db_session):
-    repo = YourRepository(db_session)
-    return YourService(repo)
+ repo = YourRepository(db_session)
+ return YourService(repo)
 
 def test_create(service):
-    result = service.create(YourModelCreate(name="test"))
-    assert result.name == "test"
+ result = service.create(YourModelCreate(name="test"))
+ assert result.name == "test"
 ```
 
 ---
@@ -212,7 +243,7 @@ def test_create(service):
 
 ## Dev Tools
 ```bash
-docker compose --profile tools up -d  # PgAdmin + Mongo Express
+docker compose --profile tools up -d # PgAdmin + Mongo Express
 ```
 - PgAdmin: http://localhost:5050 (admin@admin.com / admin)
 - Mongo Express: http://localhost:8081

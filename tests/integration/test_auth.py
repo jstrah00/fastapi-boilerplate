@@ -27,8 +27,8 @@ class TestAuthLogin:
         """Successful login should return access and refresh tokens."""
         response = await client.post(
             "/api/v1/auth/login",
-            data={
-                "username": test_user_data["email"],
+            json={
+                "email": test_user_data["email"],
                 "password": test_user_data["password"],
             },
         )

@@ -213,7 +213,7 @@ If implementation fails mid-way:
 
 Recognizes when features use:
 - PostgreSQL only
-- MongoDB only  
+- MongoDB only
 - Both (Unit of Work)
 
 Adjusts implementation steps accordingly.

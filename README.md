@@ -1,6 +1,12 @@
-# FastAPI Boilerplate
+# Backend - FastAPI Service
 
-Production-ready FastAPI boilerplate with PostgreSQL + MongoDB support, designed for quick MVP development. Includes integrated Claude Code skills and workflow optimizations for AI-assisted development.
+Production-ready FastAPI backend with PostgreSQL + MongoDB support, designed for rapid SaaS development. This is a **Git submodule** of the SaaS Boilerplate monorepo.
+
+**For complete setup instructions, see**: `../docs/GETTING_STARTED.md` in the root directory.
+
+## About This Module
+
+This backend service is designed to work as part of the SaaS Boilerplate monorepo but can also be used independently. It includes integrated Claude Code skills and workflow optimizations for AI-assisted development.
 
 ## Available Claude Code Skills
 
@@ -11,6 +17,7 @@ Use these skills to rapidly generate backend code following project conventions:
 - `/fastapi-migration` - Create and manage Alembic database migrations
 - `/fastapi-permission` - Add new permissions and roles to RBAC system
 - `/fastapi-test` - Generate comprehensive unit and integration tests
+- `/feature-from-plan` - Systematically implement features from structured Claude.ai Project prompts (two-stage workflow)
 
 **See**: `CLAUDE.md` for detailed usage and patterns
 
@@ -31,16 +38,17 @@ Use these skills to rapidly generate backend code following project conventions:
 
 ### Prerequisites
 
-- Python 3.12+
-- [UV](https://docs.astral.sh/uv/) (Python package manager)
+- Python 3.11+
+- [UV](https://docs.astral.sh/uv/) (Python package manager) - [Install Guide](https://docs.astral.sh/uv/)
 - Docker & Docker Compose
 
-### Setup
+**Note**: If you cloned the monorepo, submodules are automatically set up. This setup is for standalone backend development only.
+
+### Standalone Setup (Backend Only)
 
 ```bash
-# Clone the repository
-git clone https://github.com/jstrah00/fastapi-boilerplate.git
-cd fastapi-boilerplate
+# If working standalone (not recommended - use monorepo instead)
+cd backend
 
 # Copy environment file
 cp .env.example .env
@@ -75,56 +83,56 @@ The API will be available at `http://localhost:8000`.
 ```
 .
 ├── app/
-│   ├── api/
-│   │   ├── v1/           # API version 1 endpoints
-│   │   │   ├── auth.py   # Authentication endpoints
-│   │   │   ├── users.py  # User CRUD endpoints
-│   │   │   └── items.py  # Example CRUD endpoints
-│   │   ├── deps.py       # Dependency injection
-│   │   └── handlers.py   # Exception handlers
-│   │
-│   ├── common/
-│   │   ├── exceptions.py # Custom exceptions
-│   │   ├── logging.py    # Structured logging
-│   │   ├── permissions.py# Role-based access control
-│   │   ├── security.py   # JWT & password utils
-│   │   └── alerts.py     # Telegram alerts (optional)
-│   │
-│   ├── db/
-│   │   ├── postgres.py   # PostgreSQL connection
-│   │   ├── mongodb.py    # MongoDB connection
-│   │   └── unit_of_work.py # Cross-DB transactions
-│   │
-│   ├── models/
-│   │   ├── postgres/     # SQLAlchemy models
-│   │   │   ├── user.py
-│   │   │   └── item.py
-│   │   └── mongodb/      # Beanie documents
-│   │       └── document.py
-│   │
-│   ├── repositories/     # Data access layer
-│   │   ├── base.py
-│   │   ├── user_repo.py
-│   │   └── item_repo.py
-│   │
-│   ├── schemas/          # Pydantic DTOs
-│   │   ├── auth.py
-│   │   ├── user.py
-│   │   └── item.py
-│   │
-│   ├── services/         # Business logic
-│   │   ├── auth_service.py
-│   │   ├── user_service.py
-│   │   └── item_service.py
-│   │
-│   ├── config.py         # Application settings
-│   └── main.py           # Application entry point
+│ ├── api/
+│ │ ├── v1/ # API version 1 endpoints
+│ │ │ ├── auth.py # Authentication endpoints
+│ │ │ ├── users.py # User CRUD endpoints
+│ │ │ └── items.py # Example CRUD endpoints
+│ │ ├── deps.py # Dependency injection
+│ │ └── handlers.py # Exception handlers
+│ │
+│ ├── common/
+│ │ ├── exceptions.py # Custom exceptions
+│ │ ├── logging.py # Structured logging
+│ │ ├── permissions.py# Role-based access control
+│ │ ├── security.py # JWT & password utils
+│ │ └── alerts.py # Telegram alerts (optional)
+│ │
+│ ├── db/
+│ │ ├── postgres.py # PostgreSQL connection
+│ │ ├── mongodb.py # MongoDB connection
+│ │ └── unit_of_work.py # Cross-DB transactions
+│ │
+│ ├── models/
+│ │ ├── postgres/ # SQLAlchemy models
+│ │ │ ├── user.py
+│ │ │ └── item.py
+│ │ └── mongodb/ # Beanie documents
+│ │ └── document.py
+│ │
+│ ├── repositories/ # Data access layer
+│ │ ├── base.py
+│ │ ├── user_repo.py
+│ │ └── item_repo.py
+│ │
+│ ├── schemas/ # Pydantic DTOs
+│ │ ├── auth.py
+│ │ ├── user.py
+│ │ └── item.py
+│ │
+│ ├── services/ # Business logic
+│ │ ├── auth_service.py
+│ │ ├── user_service.py
+│ │ └── item_service.py
+│ │
+│ ├── config.py # Application settings
+│ └── main.py # Application entry point
 │
-├── alembic/              # Database migrations
-├── scripts/              # Initialization scripts
-├── tests/                # Test suite
-├── docker-compose.yml    # Development containers
-└── pyproject.toml        # Project configuration
+├── alembic/ # Database migrations
+├── scripts/ # Initialization scripts
+├── tests/ # Test suite
+├── docker-compose.yml # Development containers
+└── pyproject.toml # Project configuration
 ```
 
 
@@ -156,11 +164,11 @@ This boilerplate includes a two-stage workflow for implementing new features eff
 **Example:**
 ```
 Claude.ai Project: "Add user subscription tiers with Stripe"
-          ↓
+ ↓
 Generated Prompt (copied to Claude Code)
-          ↓
+ ↓
 Claude Code: Uses plan mode, implements following boilerplate patterns
-          ↓
+ ↓
 Production-ready code
 ```
 
@@ -186,7 +194,7 @@ docker compose down -v
 
 # View logs
 docker compose logs -f
-docker compose logs -f postgres    # Specific service
+docker compose logs -f postgres # Specific service
 
 # Database shells
 docker compose exec postgres psql -U app_user -d app_db
@@ -289,22 +297,22 @@ The permission system is defined in `app/common/permissions.py`:
 ```python
 # Define permissions
 class Permission(str, Enum):
-    USERS_READ = "users:read"
-    USERS_CREATE = "users:create"
-    # Add more...
+ USERS_READ = "users:read"
+ USERS_CREATE = "users:create"
+ # Add more...
 
 # Define roles with permission sets
 ROLE_PERMISSIONS = {
-    Role.ADMIN: {Permission.USERS_READ, Permission.USERS_CREATE, ...},
-    Role.USER: {Permission.ITEMS_READ, ...},
+ Role.ADMIN: {Permission.USERS_READ, Permission.USERS_CREATE, ...},
+ Role.USER: {Permission.ITEMS_READ, ...},
 }
 
 # Use in endpoints
 @router.get("/admin/users")
 async def admin_list_users(
-    current_user: User = Depends(require_permissions(Permission.USERS_READ))
+ current_user: User = Depends(require_permissions(Permission.USERS_READ))
 ):
-    ...
+ ...
 ```
 
 ## API Documentation

@@ -1,513 +1,1288 @@
-# Feature Development Workflow
+# Backend Feature Development Workflow
 
-Complete guide to the two-stage workflow for implementing features in this FastAPI boilerplate.
+Step-by-step guide for implementing features in this FastAPI backend with PostgreSQL + MongoDB.
 
 ## Table of Contents
-- [Overview](#overview)
-- [One-Time Setup](#one-time-setup)
-- [Daily Usage](#daily-usage)
-- [Examples](#examples)
+- [Quick Start](#quick-start)
+- [Feature Implementation Flow](#feature-implementation-flow)
+- [Common Feature Types](#common-feature-types)
+- [Integration with Frontend](#integration-with-frontend)
+- [Testing Strategy](#testing-strategy)
 - [Tips & Best Practices](#tips--best-practices)
 
 ---
 
-## Overview
+## Quick Start
 
-### The Problem
+### Prerequisites
+- Docker services running (PostgreSQL, MongoDB)
+- Backend running at http://localhost:8000
+- Familiarity with FastAPI, SQLAlchemy, and async Python
+- Python 3.11+ with UV package manager
 
-When building features directly with Claude Code:
-- You waste tokens explaining business context repeatedly
-- Generic implementations don't match your architectural patterns
-- Multiple iterations needed to align with boilerplate conventions
-- High token consumption impacts Pro plan limits
-
-### The Solution
-
-Two-stage workflow optimizes for both quality and token efficiency:
-```
-Stage 1: Claude.ai Project (Feature Planner)
-Input:  Business requirements in natural language
-Output: Structured, pattern-aware Claude Code prompt
-
-Stage 2: Claude Code (Feature Executor)
-Input:  Generated prompt from Stage 1
-Uses:   Plan mode for review, then execution
-Output: Production-ready code following boilerplate patterns
-```
-
-### Token Efficiency
-
-**Traditional approach:** 15-25K tokens per feature (context + iterations)
-**This workflow:** 5-10K tokens per feature (optimized prompt + single pass)
-
-**Savings:** 50-60% reduction in Claude Code token usage
+### Typical Feature Timeline
+- Simple CRUD: 1-2 hours
+- Form with validation: 30-45 minutes
+- Complex business logic: 2-4 hours
+- Multi-database feature: 3-5 hours
 
 ---
 
-## One-Time Setup
+## Feature Implementation Flow
 
-### Step 1: Create Claude.ai Project
+### Step 1: Choose Database (Critical Decision)
 
-1. Go to [claude.ai](https://claude.ai)
-2. Click "Projects" in sidebar
-3. Click "Create Project"
+**This decision affects the entire implementation!**
 
-**Project Name:**
+#### Use PostgreSQL for:
+- [X] User management (authentication, profiles)
+- [X] Roles & permissions (RBAC)
+- [X] Transactional data requiring ACID guarantees
+- [X] Complex relationships (foreign keys, joins)
+- [X] Data with strict schema requirements
+- [X] Billing and payment data
+
+#### Use MongoDB for:
+- [X] Event logs & audit trails
+- [X] Analytics data & metrics
+- [X] Flexible schemas (varying structure)
+- [X] High write throughput
+- [X] Nested/hierarchical data
+- [X] Temporary/cached data
+
+**Example**: For a product catalog with categories and pricing, use PostgreSQL (structured data with relationships).
+
+---
+
+### Step 2: Define Models
+
+#### PostgreSQL Model
+
+Create model in `backend/app/models/postgres/`:
+
+```python
+"""Product model for inventory management.
+
+This module defines the Product SQLAlchemy model representing products in the catalog.
+Includes relationships to categories and pricing tiers.
+"""
+
+from datetime import datetime
+from decimal import Decimal
+from uuid import UUID, uuid4
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.models.base import Base
+
+
+class Product(Base):
+ """Product model representing items in the catalog.
+
+ Attributes:
+ id: Unique product identifier
+ name: Product name (max 200 chars)
+ description: Optional product description
+ sku: Stock Keeping Unit (unique identifier)
+ price: Product price (Decimal for precision)
+ stock_quantity: Current inventory count
+ category_id: Foreign key to Category
+ is_active: Soft delete flag
+ created_at: Timestamp of creation
+ updated_at: Timestamp of last update
+ """
+
+ __tablename__ = "products"
+
+ id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+ name: Mapped[str] = mapped_column(String(200), index=True, nullable=False)
+ description: Mapped[str | None] = mapped_column(String, nullable=True)
+ sku: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+ price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+ stock_quantity: Mapped[int] = mapped_column(default=0, nullable=False)
+ category_id: Mapped[UUID] = mapped_column(ForeignKey("categories.id"), nullable=False)
+ is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+ created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+ updated_at: Mapped[datetime] = mapped_column(
+ DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+ )
+
+ # Relationships
+ category: Mapped["Category"] = relationship("Category", back_populates="products")
 ```
-[Your SaaS Name] - Feature Planner
+
+**Key Points**:
+- Always add module docstring describing purpose
+- Use type hints with `Mapped[]`
+- Index frequently queried fields
+- Use `Decimal` for money (not `float`)
+- Include `created_at` and `updated_at` timestamps
+- Soft delete with `is_active` flag
+
+#### MongoDB Document
+
+Create document model in `backend/app/models/mongodb/`:
+
+```python
+"""Event log document for tracking user actions.
+
+This module defines the EventLog document for storing application events
+in MongoDB with flexible schema for metadata.
+"""
+
+from datetime import datetime
+from typing import Any
+
+from beanie import Document
+from pydantic import Field
+
+
+class EventLog(Document):
+ """Event log document for tracking application events.
+
+ Attributes:
+ event_type: Type of event (e.g., 'user_login', 'product_created')
+ user_id: UUID of user who triggered event
+ timestamp: When the event occurred
+ metadata: Flexible dict for event-specific data
+ """
+
+ event_type: str = Field(..., description="Type of event")
+ user_id: str = Field(..., description="User who triggered the event")
+ timestamp: datetime = Field(default_factory=datetime.utcnow)
+ metadata: dict[str, Any] = Field(default_factory=dict, description="Flexible event data")
+
+ class Settings:
+ name = "event_logs" # Collection name
+ indexes = [
+ "event_type",
+ "user_id",
+ "timestamp",
+ ]
 ```
 
-**Project Description:**
-```
-Generates optimized Claude Code prompts for implementing features in [Your SaaS Name].
-Ensures all code follows the FastAPI boilerplate patterns, dual-database architecture,
-and RBAC conventions.
-```
+**Key Points**:
+- Inherit from `beanie.Document`
+- Must set `Settings.name` to collection name
+- Define indexes in `Settings.indexes`
+- Use flexible types (`dict[str, Any]`) for varying structures
+- Always add module and class docstrings
 
-### Step 2: Add Project Knowledge
+---
 
-Click "Add Content" and upload these files:
+### Step 3: Create Migration (PostgreSQL only)
 
-**1. Your SaaS Context** - Create `saas-context.md`:
-```markdown
-# [Your SaaS Name] - Project Context
+**Alembic manages PostgreSQL schema changes:**
 
-## What We're Building
-[Describe your SaaS: purpose, target users, key value proposition]
+```bash
+# Auto-generate migration from model changes
+cd backend
+uv run alembic revision --autogenerate -m "add products table"
 
-## Tech Stack
-- Backend: FastAPI (async)
-- Databases: PostgreSQL + MongoDB (dual database)
-- Auth: JWT (access + refresh tokens)
-- RBAC: Role-based permissions system
-- Package Manager: UV
-- Deployment: Docker
+# Review generated migration in alembic/versions/
+# IMPORTANT: Always review before applying!
 
-## Business Model
-[Describe pricing, tiers, key features]
+# Apply migration
+uv run alembic upgrade head
 
-## User Roles
-- Admin: Full system access
-- User: Standard access
-- [Other custom roles]
-
-## Current Features
-- Authentication (JWT with refresh)
-- User management with RBAC
-- Items CRUD (example resource)
-- [List other implemented features]
-
-## Key Business Rules
-[List important constraints, validation rules, workflows]
+# Verify current migration
+uv run alembic current
 ```
 
-**2. Boilerplate Documentation** - Copy content from [prompts/backend-patterns.md](prompts/backend-patterns.md)
+**Critical**:
+- ALWAYS review generated migrations before applying
+- Check that down migration (rollback) is correct
+- Verify foreign key constraints are created
+- Ensure indexes are included
 
-**3. Example Features** (optional) - Add examples of well-implemented features
+**MongoDB**: No migrations needed - schema is flexible.
 
-### Step 3: Set Custom Instructions
+---
 
-In Project Settings, paste content from [prompts/custom-instructions.md](prompts/custom-instructions.md)
+### Step 4: Define Schemas
 
-### Step 4: Configure Project Memory
+Create Pydantic schemas in `backend/app/schemas/`:
 
-In Project Settings:
+```python
+"""Product schemas for request/response validation.
 
-**Enable:**
-- "Remember information from our conversations"
-- "Use project knowledge"
+This module defines Pydantic schemas for Product API endpoints,
+handling validation and serialization.
+"""
 
-**Add Memory Controls:**
+from datetime import datetime
+from decimal import Decimal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ProductBase(BaseModel):
+ """Base product schema with common fields."""
+
+ name: str = Field(..., min_length=2, max_length=200, description="Product name")
+ description: str | None = Field(None, description="Optional product description")
+ sku: str = Field(..., min_length=1, max_length=50, description="Stock Keeping Unit")
+ price: Decimal = Field(..., gt=0, description="Product price (must be positive)")
+ stock_quantity: int = Field(..., ge=0, description="Current inventory count")
+ category_id: UUID = Field(..., description="Category UUID")
+
+
+class ProductCreate(ProductBase):
+ """Schema for creating a new product."""
+
+ pass # Inherits all fields from ProductBase
+
+
+class ProductUpdate(ProductBase):
+ """Schema for updating an existing product (all fields optional)."""
+
+ name: str | None = Field(None, min_length=2, max_length=200)
+ description: str | None = None
+ sku: str | None = Field(None, min_length=1, max_length=50)
+ price: Decimal | None = Field(None, gt=0)
+ stock_quantity: int | None = Field(None, ge=0)
+ category_id: UUID | None = None
+
+
+class ProductResponse(ProductBase):
+ """Schema for product responses (includes DB fields)."""
+
+ model_config = ConfigDict(from_attributes=True) # Allow ORM objects
+
+ id: UUID
+ is_active: bool
+ created_at: datetime
+ updated_at: datetime
 ```
-- Always reference the FastAPI boilerplate structure
-- Remember previously implemented features
-- Track database schema changes across PostgreSQL and MongoDB
-- Maintain consistency with existing API patterns
-- Reference the dual-database architecture when relevant
+
+**Key Points**:
+- `ProductBase` contains common fields
+- `ProductCreate` for POST requests
+- `ProductUpdate` for PUT/PATCH (fields optional)
+- `ProductResponse` for API responses (includes `id`, timestamps)
+- Set `from_attributes = True` to serialize SQLAlchemy models
+- Use `Field()` with validation (min_length, gt, ge, etc.)
+
+---
+
+### Step 5: Repository Layer
+
+Create repository in `backend/app/repositories/`:
+
+```python
+"""Product repository for database operations.
+
+This module provides data access methods for the Product model,
+implementing the repository pattern to abstract database queries.
+"""
+
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.postgres.product import Product
+from app.schemas.product import ProductCreate, ProductUpdate
+
+
+class ProductRepository:
+ """Repository for Product database operations.
+
+ Handles all database queries for products, providing a clean
+ interface for the service layer.
+ """
+
+ def __init__(self, session: AsyncSession):
+ """Initialize repository with database session.
+
+ Args:
+ session: SQLAlchemy async session
+ """
+ self.session = session
+
+ async def get_by_id(self, product_id: UUID) -> Product | None:
+ """Fetch product by ID.
+
+ Args:
+ product_id: UUID of the product
+
+ Returns:
+ Product if found, None otherwise
+ """
+ result = await self.session.execute(
+ select(Product).where(Product.id == product_id)
+ )
+ return result.scalar_one_or_none()
+
+ async def get_all(
+ self, skip: int = 0, limit: int = 100, category_id: UUID | None = None
+ ) -> list[Product]:
+ """Fetch all products with pagination and optional filtering.
+
+ Args:
+ skip: Number of records to skip (pagination)
+ limit: Maximum number of records to return
+ category_id: Optional category filter
+
+ Returns:
+ List of products
+ """
+ query = select(Product).where(Product.is_active == True)
+
+ if category_id:
+ query = query.where(Product.category_id == category_id)
+
+ query = query.offset(skip).limit(limit)
+
+ result = await self.session.execute(query)
+ return list(result.scalars().all())
+
+ async def create(self, product_data: ProductCreate) -> Product:
+ """Create a new product.
+
+ Args:
+ product_data: Product creation schema
+
+ Returns:
+ Created product with generated ID
+ """
+ product = Product(**product_data.model_dump())
+ self.session.add(product)
+ await self.session.commit()
+ await self.session.refresh(product)
+ return product
+
+ async def update(self, product: Product, product_data: ProductUpdate) -> Product:
+ """Update an existing product.
+
+ Args:
+ product: Product instance to update
+ product_data: Update data (only provided fields are updated)
+
+ Returns:
+ Updated product
+ """
+ update_data = product_data.model_dump(exclude_unset=True)
+ for field, value in update_data.items():
+ setattr(product, field, value)
+
+ await self.session.commit()
+ await self.session.refresh(product)
+ return product
+
+ async def delete(self, product: Product) -> None:
+ """Soft delete a product (set is_active = False).
+
+ Args:
+ product: Product to delete
+ """
+ product.is_active = False
+ await self.session.commit()
+```
+
+**Key Points**:
+- Repository handles all database queries
+- Constructor takes `AsyncSession`
+- Use `async`/`await` for all database operations
+- Soft delete (set `is_active = False`) instead of hard delete
+- Use `model_dump(exclude_unset=True)` for partial updates
+
+---
+
+### Step 6: Service Layer
+
+Create service in `backend/app/services/`:
+
+```python
+"""Product service for business logic.
+
+This module contains business logic for product management,
+orchestrating repository calls and applying domain rules.
+"""
+
+from uuid import UUID
+
+from app.common.exceptions import NotFoundException
+from app.repositories.product_repository import ProductRepository
+from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
+
+
+class ProductService:
+ """Service for product business logic.
+
+ Handles product operations with business rules and validations.
+ """
+
+ def __init__(self, repository: ProductRepository):
+ """Initialize service with repository.
+
+ Args:
+ repository: Product repository instance
+ """
+ self.repository = repository
+
+ async def get_product(self, product_id: UUID) -> ProductResponse:
+ """Get product by ID.
+
+ Args:
+ product_id: UUID of the product
+
+ Returns:
+ Product response schema
+
+ Raises:
+ NotFoundException: If product not found
+ """
+ product = await self.repository.get_by_id(product_id)
+ if not product or not product.is_active:
+ raise NotFoundException(f"Product {product_id} not found")
+ return ProductResponse.model_validate(product)
+
+ async def get_products(
+ self, skip: int = 0, limit: int = 100, category_id: UUID | None = None
+ ) -> list[ProductResponse]:
+ """Get all products with pagination.
+
+ Args:
+ skip: Records to skip
+ limit: Max records to return
+ category_id: Optional category filter
+
+ Returns:
+ List of product responses
+ """
+ products = await self.repository.get_all(skip, limit, category_id)
+ return [ProductResponse.model_validate(p) for p in products]
+
+ async def create_product(self, product_data: ProductCreate) -> ProductResponse:
+ """Create a new product.
+
+ Args:
+ product_data: Product creation data
+
+ Returns:
+ Created product
+ """
+ # Business logic can go here (e.g., validate SKU format, check stock)
+ product = await self.repository.create(product_data)
+ return ProductResponse.model_validate(product)
+
+ async def update_product(
+ self, product_id: UUID, product_data: ProductUpdate
+ ) -> ProductResponse:
+ """Update an existing product.
+
+ Args:
+ product_id: UUID of product to update
+ product_data: Update data
+
+ Returns:
+ Updated product
+
+ Raises:
+ NotFoundException: If product not found
+ """
+ product = await self.repository.get_by_id(product_id)
+ if not product or not product.is_active:
+ raise NotFoundException(f"Product {product_id} not found")
+
+ updated_product = await self.repository.update(product, product_data)
+ return ProductResponse.model_validate(updated_product)
+
+ async def delete_product(self, product_id: UUID) -> None:
+ """Delete a product (soft delete).
+
+ Args:
+ product_id: UUID of product to delete
+
+ Raises:
+ NotFoundException: If product not found
+ """
+ product = await self.repository.get_by_id(product_id)
+ if not product or not product.is_active:
+ raise NotFoundException(f"Product {product_id} not found")
+
+ await self.repository.delete(product)
+```
+
+**Key Points**:
+- Service contains business logic
+- Orchestrates repository calls
+- Converts ORM models to Pydantic schemas
+- Raises exceptions for error cases
+- Validates business rules (e.g., check stock before order)
+
+---
+
+### Step 7: API Endpoints
+
+Create router in `backend/app/api/v1/endpoints/`:
+
+```python
+"""Product API endpoints.
+
+This module defines REST API endpoints for product management,
+including CRUD operations with proper authentication and permissions.
+"""
+
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.common.dependencies import get_current_user, get_db, require_permissions
+from app.common.permissions import Permission
+from app.models.postgres.user import User
+from app.repositories.product_repository import ProductRepository
+from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
+from app.services.product_service import ProductService
+
+
+router = APIRouter(prefix="/products", tags=["products"])
+
+
+def get_product_service(db: AsyncSession = Depends(get_db)) -> ProductService:
+ """Dependency to get ProductService instance.
+
+ Args:
+ db: Database session
+
+ Returns:
+ ProductService instance
+ """
+ repository = ProductRepository(db)
+ return ProductService(repository)
+
+
+@router.get("/", response_model=list[ProductResponse])
+async def list_products(
+ skip: int = Query(0, ge=0, description="Records to skip"),
+ limit: int = Query(100, ge=1, le=1000, description="Max records to return"),
+ category_id: UUID | None = Query(None, description="Filter by category"),
+ service: ProductService = Depends(get_product_service),
+ current_user: User = Depends(require_permissions(Permission.PRODUCTS_READ)),
+):
+ """List all products with pagination.
+
+ Args:
+ skip: Number of records to skip (pagination)
+ limit: Maximum records to return
+ category_id: Optional category filter
+ service: Product service dependency
+ current_user: Authenticated user with PRODUCTS_READ permission
+
+ Returns:
+ List of products
+ """
+ return await service.get_products(skip, limit, category_id)
+
+
+@router.get("/{product_id}", response_model=ProductResponse)
+async def get_product(
+ product_id: UUID,
+ service: ProductService = Depends(get_product_service),
+ current_user: User = Depends(require_permissions(Permission.PRODUCTS_READ)),
+):
+ """Get a single product by ID.
+
+ Args:
+ product_id: Product UUID
+ service: Product service dependency
+ current_user: Authenticated user with PRODUCTS_READ permission
+
+ Returns:
+ Product details
+
+ Raises:
+ HTTPException: 404 if product not found
+ """
+ return await service.get_product(product_id)
+
+
+@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+async def create_product(
+ product_data: ProductCreate,
+ service: ProductService = Depends(get_product_service),
+ current_user: User = Depends(require_permissions(Permission.PRODUCTS_WRITE)),
+):
+ """Create a new product.
+
+ Args:
+ product_data: Product creation data
+ service: Product service dependency
+ current_user: Authenticated user with PRODUCTS_WRITE permission
+
+ Returns:
+ Created product
+ """
+ return await service.create_product(product_data)
+
+
+@router.patch("/{product_id}", response_model=ProductResponse)
+async def update_product(
+ product_id: UUID,
+ product_data: ProductUpdate,
+ service: ProductService = Depends(get_product_service),
+ current_user: User = Depends(require_permissions(Permission.PRODUCTS_WRITE)),
+):
+ """Update an existing product.
+
+ Args:
+ product_id: Product UUID
+ product_data: Update data (only provided fields are updated)
+ service: Product service dependency
+ current_user: Authenticated user with PRODUCTS_WRITE permission
+
+ Returns:
+ Updated product
+
+ Raises:
+ HTTPException: 404 if product not found
+ """
+ return await service.update_product(product_id, product_data)
+
+
+@router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product(
+ product_id: UUID,
+ service: ProductService = Depends(get_product_service),
+ current_user: User = Depends(require_permissions(Permission.PRODUCTS_DELETE)),
+):
+ """Delete a product (soft delete).
+
+ Args:
+ product_id: Product UUID
+ service: Product service dependency
+ current_user: Authenticated user with PRODUCTS_DELETE permission
+
+ Raises:
+ HTTPException: 404 if product not found
+ """
+ await service.delete_product(product_id)
+```
+
+**Register Router** in `backend/app/api/v1/router.py`:
+```python
+from app.api.v1.endpoints import products
+
+api_router = APIRouter()
+api_router.include_router(products.router)
+```
+
+**Key Points**:
+- Use `APIRouter` with prefix and tags
+- Create dependency for service instantiation
+- Use `Depends(require_permissions(...))` for auth
+- Document all parameters with docstrings
+- Use appropriate HTTP status codes (201 for creation, 204 for deletion)
+- Pagination with `skip` and `limit` query params
+
+---
+
+### Step 8: Add Permissions
+
+Add permissions to `backend/app/common/permissions.py`:
+
+```python
+class Permission(str, Enum):
+ """Permission enumeration for RBAC."""
+
+ # Existing permissions
+ USERS_READ = "users:read"
+ USERS_WRITE = "users:write"
+ # ... other permissions
+
+ # New product permissions
+ PRODUCTS_READ = "products:read"
+ PRODUCTS_WRITE = "products:write"
+ PRODUCTS_DELETE = "products:delete"
+```
+
+**Create migration for permissions**:
+```bash
+uv run alembic revision -m "add product permissions"
+```
+
+**Manually add permissions in migration**:
+```python
+def upgrade():
+ # Insert new permissions
+ op.execute("""
+ INSERT INTO permissions (name, description)
+ VALUES
+ ('products:read', 'View products'),
+ ('products:write', 'Create and edit products'),
+ ('products:delete', 'Delete products');
+ """)
+
+def downgrade():
+ # Remove permissions
+ op.execute("""
+ DELETE FROM permissions
+ WHERE name IN ('products:read', 'products:write', 'products:delete');
+ """)
+```
+
+**Assign to roles**:
+- Admin: All product permissions
+- User: `PRODUCTS_READ` only
+
+---
+
+### Step 9: Write Tests
+
+Create tests in `backend/tests/integration/`:
+
+```python
+"""Integration tests for product endpoints.
+
+This module contains tests for product CRUD operations,
+including authentication and permission checks.
+"""
+
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.postgres.product import Product
+from app.schemas.product import ProductCreate
+
+
+@pytest.mark.asyncio
+async def test_list_products(client: AsyncClient, auth_headers: dict):
+ """Test listing products with pagination."""
+ response = await client.get("/api/v1/products", headers=auth_headers)
+ assert response.status_code == 200
+ assert isinstance(response.json(), list)
+
+
+@pytest.mark.asyncio
+async def test_create_product(client: AsyncClient, admin_headers: dict):
+ """Test creating a new product (admin only)."""
+ product_data = {
+ "name": "Test Product",
+ "description": "A test product",
+ "sku": "TEST-001",
+ "price": "29.99",
+ "stock_quantity": 100,
+ "category_id": "some-uuid-here",
+ }
+
+ response = await client.post(
+ "/api/v1/products", json=product_data, headers=admin_headers
+ )
+ assert response.status_code == 201
+ data = response.json()
+ assert data["name"] == "Test Product"
+ assert data["sku"] == "TEST-001"
+
+
+@pytest.mark.asyncio
+async def test_create_product_forbidden(client: AsyncClient, user_headers: dict):
+ """Test that non-admin cannot create products."""
+ product_data = {
+ "name": "Test Product",
+ "sku": "TEST-001",
+ "price": "29.99",
+ "stock_quantity": 100,
+ "category_id": "some-uuid-here",
+ }
+
+ response = await client.post(
+ "/api/v1/products", json=product_data, headers=user_headers
+ )
+ assert response.status_code == 403 # Forbidden
+
+
+@pytest.mark.asyncio
+async def test_update_product(
+ client: AsyncClient, admin_headers: dict, db_session: AsyncSession
+):
+ """Test updating an existing product."""
+ # Create test product
+ product = Product(
+ name="Original Name",
+ sku="TEST-002",
+ price=19.99,
+ stock_quantity=50,
+ category_id="some-uuid",
+ )
+ db_session.add(product)
+ await db_session.commit()
+
+ # Update product
+ update_data = {"name": "Updated Name", "price": "24.99"}
+ response = await client.patch(
+ f"/api/v1/products/{product.id}", json=update_data, headers=admin_headers
+ )
+
+ assert response.status_code == 200
+ data = response.json()
+ assert data["name"] == "Updated Name"
+ assert float(data["price"]) == 24.99
+
+
+@pytest.mark.asyncio
+async def test_delete_product(
+ client: AsyncClient, admin_headers: dict, db_session: AsyncSession
+):
+ """Test deleting a product (soft delete)."""
+ # Create test product
+ product = Product(
+ name="To Delete",
+ sku="TEST-003",
+ price=9.99,
+ stock_quantity=10,
+ category_id="some-uuid",
+ )
+ db_session.add(product)
+ await db_session.commit()
+
+ # Delete product
+ response = await client.delete(
+ f"/api/v1/products/{product.id}", headers=admin_headers
+ )
+ assert response.status_code == 204
+
+ # Verify soft delete (product still in DB but is_active = False)
+ await db_session.refresh(product)
+ assert product.is_active is False
+
+
+@pytest.mark.asyncio
+async def test_get_product_not_found(client: AsyncClient, auth_headers: dict):
+ """Test getting a non-existent product returns 404."""
+ fake_uuid = "00000000-0000-0000-0000-000000000000"
+ response = await client.get(f"/api/v1/products/{fake_uuid}", headers=auth_headers)
+ assert response.status_code == 404
+```
+
+**Run tests**:
+```bash
+# All tests
+uv run pytest backend/tests/integration/test_products.py -v
+
+# Specific test
+uv run pytest backend/tests/integration/test_products.py::test_create_product -v
+
+# With coverage
+uv run pytest backend/tests/integration/test_products.py --cov=app
 ```
 
 ---
 
-## Daily Usage
+## Common Feature Types
 
-### Implementing a New Feature
+### 1. Simple CRUD (Products, Items)
 
-#### 1. Open Claude.ai Project
+**Characteristics**:
+- Standard create, read, update, delete operations
+- Single database (usually PostgreSQL)
+- Straightforward relationships
 
-Start a new chat or continue existing conversation.
+**Steps**: Follow all 9 steps above
 
-#### 2. Describe Your Feature
+**Time**: 1-2 hours
 
-Use natural language - the Project has all context:
-```
-I need to add subscription tiers to the SaaS.
+### 2. Complex Business Logic (Order Processing)
 
-Requirements:
-- Three tiers: Free, Pro, Enterprise
-- Store in PostgreSQL (structured billing data)
-- Track usage metrics in MongoDB (flexible schema)
-- Free: 5 items max, basic features
-- Pro: 50 items, advanced features, $19/month
-- Enterprise: unlimited, custom pricing
-- Stripe integration for payments
-- Middleware to enforce tier limits
-```
+**Characteristics**:
+- Multi-step workflows
+- Complex validation rules
+- Multiple database operations in transaction
 
-#### 3. Get Optimized Claude Code Prompt
+**Example**: Order placement
+- Validate stock availability
+- Calculate pricing (base price + discounts + taxes)
+- Reserve inventory
+- Create order record
+- Send confirmation
 
-The Project generates a structured prompt:
-```
-Implement subscription tiers with dual-database architecture.
+**Key Difference**: Heavy service layer with business rules
 
-CONTEXT:
-This FastAPI boilerplate uses:
-- PostgreSQL + MongoDB (dual database via Unit of Work)
-- Repository pattern for data access
-- Service layer for business logic
-- RBAC with Permission/Role system
-- Async/await throughout
-- UV for dependency management
+**Time**: 2-4 hours
 
-REQUIREMENTS:
-[Detailed breakdown based on your description]
+### 3. Multi-Database Feature (Activity Tracking)
 
-IMPLEMENTATION PLAN:
-1. PostgreSQL Models (structured billing):
-   - SubscriptionTier table
-   - UserSubscription table
-   
-2. MongoDB Documents (usage tracking):
-   - UsageMetrics collection
-   - TierLimits collection
+**Characteristics**:
+- Uses both PostgreSQL and MongoDB
+- PostgreSQL for core data
+- MongoDB for logs/events
 
-3. Repository Layer:
-   - TierRepository (PostgreSQL)
-   - UsageRepository (MongoDB)
-   - Use Unit of Work for cross-DB transactions
+**Example**: User activity tracking
+- User model in PostgreSQL (structured)
+- Activity logs in MongoDB (high write volume, flexible)
 
-[... detailed step-by-step instructions ...]
+**Implementation**:
+```python
+# Service coordinates both databases
+class ActivityService:
+ def __init__(
+ self,
+ user_repo: UserRepository, # PostgreSQL
+ event_repo: EventRepository # MongoDB
+ ):
+ self.user_repo = user_repo
+ self.event_repo = event_repo
 
-EXECUTION IN CLAUDE CODE:
-1. Use plan mode first: Review the implementation plan
-2. After plan approval, execute systematically
-3. Use the feature-from-plan skill if available
+ async def track_login(self, user_id: UUID, ip_address: str):
+ # Update last_login in PostgreSQL
+ await self.user_repo.update_last_login(user_id)
 
-FILES TO CREATE:
-[Explicit list of all files]
-
-Start with PostgreSQL models, then MongoDB documents, then repositories.
+ # Log event in MongoDB
+ await self.event_repo.create_event({
+ "event_type": "user_login",
+ "user_id": str(user_id),
+ "metadata": {"ip_address": ip_address}
+ })
 ```
 
-#### 4. Copy to Claude Code
+**Time**: 3-5 hours
 
-Open terminal in boilerplate directory:
+### 4. Read-Only Feature (Dashboard Metrics)
+
+**Characteristics**:
+- No create/update/delete operations
+- Aggregations and analytics
+- Can use MongoDB for flexibility
+
+**Steps**: Skip create/update/delete, focus on queries
+
+**Time**: 1-2 hours
+
+---
+
+## Integration with Frontend
+
+### Type Generation Flow
+
+**After implementing backend**, generate TypeScript types for frontend:
+
 ```bash
-cd your-saas-project
-claude
+# 1. Ensure backend is running
+curl http://localhost:8000/docs
+
+# 2. Generate types
+cd frontend
+npm run generate:types
+
+# 3. Verify generated types
+cat src/types/generated/api.ts | grep "ProductResponse"
 ```
 
-**Important:** Use plan mode first:
-```bash
-# In Claude Code, paste the generated prompt
-# Claude Code will automatically enter plan mode (if configured)
-# OR explicitly request:
-"First create a detailed plan for this implementation. 
-After I approve the plan, execute it step by step."
+**Output**: Frontend gets TypeScript interfaces matching backend Pydantic schemas:
+```typescript
+export interface ProductResponse {
+ id: string;
+ name: string;
+ description?: string;
+ sku: string;
+ price: number;
+ stock_quantity: number;
+ category_id: string;
+ is_active: boolean;
+ created_at: string;
+ updated_at: string;
+}
+
+export enum Permission {
+ PRODUCTS_READ = "products:read",
+ PRODUCTS_WRITE = "products:write",
+ PRODUCTS_DELETE = "products:delete",
+}
 ```
 
-Review the plan, provide feedback, then approve execution.
+### API Contract
 
-#### 5. Execute with feature-from-plan Skill
+**REST Conventions** used in this boilerplate:
 
-If you have the feature-from-plan skill installed (see [Custom Skills](#custom-skills)):
-```bash
-# In Claude Code:
-"Use the feature-from-plan skill to implement this:
-[paste the generated prompt]"
+```
+GET /api/v1/products # List (paginated)
+POST /api/v1/products # Create (returns 201)
+GET /api/v1/products/{id} # Get single
+PATCH /api/v1/products/{id} # Partial update
+DELETE /api/v1/products/{id} # Delete (returns 204)
 ```
 
-The skill will:
-- Parse the structured prompt
-- Create implementation checklist
-- Execute systematically
-- Track progress
-- Run tests after each major step
+**Response Format**:
+```json
+// Single resource
+{
+ "id": "uuid",
+ "name": "Product Name",
+ ...
+}
 
-#### 6. Review & Test
+// List
+{
+ "items": [...],
+ "total": 100,
+ "page": 1,
+ "size": 10
+}
 
-After implementation:
-- Review generated code
-- Run tests: `uv run test`
-- Test API endpoints
-- Verify database migrations
-
-#### 7. Update Project Knowledge
-
-Back in Claude.ai Project, document what was implemented:
-```
-Feature completed: Subscription Tiers
-- PostgreSQL: subscription_tiers, user_subscriptions tables
-- MongoDB: usage_metrics, tier_limits collections
-- API: /api/v1/subscriptions/* endpoints
-- Middleware: check_tier_limit in app/api/deps.py
-- Tests: tests/integration/test_subscriptions.py
+// Error
+{
+ "detail": "Error message"
+}
 ```
 
 ---
 
-## Custom Skills
+## Testing Strategy
 
-### Using Anthropic's skill-creator
+### Unit Tests (Services & Repositories)
 
-This boilerplate workflow integrates with Anthropic's official skills repository.
+**Repository Tests** (`backend/tests/unit/repositories/`):
+```python
+@pytest.mark.asyncio
+async def test_repository_get_by_id(db_session):
+ """Test fetching product by ID."""
+ repo = ProductRepository(db_session)
 
-**Add the skills repository as a plugin:**
-```bash
-# In Claude Code:
-/plugin marketplace add anthropics/skills
-/plugin install skill-creator@anthropics-skills
+ # Create test product
+ product = Product(name="Test", sku="TEST", price=9.99, ...)
+ db_session.add(product)
+ await db_session.commit()
+
+ # Fetch by ID
+ result = await repo.get_by_id(product.id)
+ assert result is not None
+ assert result.name == "Test"
 ```
 
-The `skill-creator` skill helps you build custom skills efficiently.
+**Service Tests** (`backend/tests/unit/services/`):
+```python
+@pytest.mark.asyncio
+async def test_service_get_product_not_found():
+ """Test service raises exception when product not found."""
+ mock_repo = Mock(spec=ProductRepository)
+ mock_repo.get_by_id.return_value = None
 
-**Creating the feature-from-plan skill:**
+ service = ProductService(mock_repo)
 
-1. In Claude Code:
-```bash
-"Use the skill-creator skill to help me create a custom skill called 
-'feature-from-plan' that:
-- Parses structured feature prompts from our Claude.ai Project
-- Creates an implementation checklist
-- Executes step-by-step with validation
-- Tracks progress in a plan.md file
-- Runs tests after each major component"
+ with pytest.raises(NotFoundException):
+ await service.get_product("fake-uuid")
 ```
 
-2. The skill-creator will guide you through creating `.claude/skills/feature-from-plan/SKILL.md`
+### Integration Tests (Full Endpoints)
 
-**Or use the pre-built skill:**
+**Test Complete Request/Response Cycle** (`backend/tests/integration/`):
+- Authentication
+- Permission checks
+- Database operations
+- Response format
 
-Copy the skill from this boilerplate:
-```bash
-# The skill is already in .claude/skills/feature-from-plan/
-# It's automatically available in Claude Code
+**Fixtures**:
+```python
+@pytest.fixture
+async def admin_user(db_session):
+ """Create admin user with full permissions."""
+ user = User(email="admin@test.com", ...)
+ db_session.add(user)
+ await db_session.commit()
+ return user
+
+@pytest.fixture
+def admin_headers(admin_user):
+ """Generate auth headers for admin."""
+ token = create_access_token(admin_user.id)
+ return {"Authorization": f"Bearer {token}"}
 ```
 
-See [.claude/skills/feature-from-plan/SKILL.md](../.claude/skills/feature-from-plan/SKILL.md) for details.
+### Running Tests
 
----
+```bash
+# All tests
+uv run pytest
 
-## Examples
+# Unit tests only
+uv run pytest backend/tests/unit/
 
-For detailed examples of the two-stage workflow in action, see [prompts/EXAMPLE_USAGE.md](prompts/EXAMPLE_USAGE.md).
+# Integration tests only
+uv run pytest backend/tests/integration/
 
-Examples included:
-- **Simple CRUD** - Tags feature (PostgreSQL)
-- **Dual-Database** - Activity tracking (MongoDB + PostgreSQL references)
-- **Complex Integration** - Stripe payments (multi-phase implementation)
+# Specific file
+uv run pytest backend/tests/integration/test_products.py
 
-Each example shows the complete conversation flow: user request → Claude.ai clarifying questions → generated prompt → Claude Code execution.
+# With coverage report
+uv run pytest --cov=app --cov-report=html
+
+# Watch mode (re-run on changes)
+uv run pytest-watch
+```
 
 ---
 
 ## Tips & Best Practices
 
-### For Claude.ai Project (Planner)
+### Database
 
-**DO:**
-- Start with business requirements and user flows
-- Mention specific edge cases or constraints
-- Reference existing features when relevant
-- Ask Project to break large features into phases
-- Update project knowledge after implementation
+**DO**:
+- [X] Choose PostgreSQL for relational data with ACID requirements
+- [X] Choose MongoDB for flexible schemas and high write volume
+- [X] Index foreign keys and frequently queried fields
+- [X] Use soft delete (`is_active = False`) instead of hard delete
+- [X] Always add `created_at` and `updated_at` timestamps
 
-**DON'T:**
-- Provide technical implementation details (let the Project handle that)
-- Repeat boilerplate patterns (they're in project knowledge)
-- Request multiple unrelated features in one chat
-- Assume the Project knows recent changes (update knowledge)
+**DON'T**:
+- [-] Store same logical data in both databases
+- [-] Use MongoDB just because "NoSQL is faster" (choose based on data structure)
+- [-] Skip migration review (always check before applying)
+- [-] Use `float` for money (use `Decimal`)
 
-### For Claude Code (Executor)
+### Code Quality
 
-**DO:**
-- Always use plan mode first to review approach
-- Use `/clear` between different features
-- Let Claude complete one layer before moving to next
-- Review generated tests carefully
-- Run migrations immediately after model changes
-- Use feature-from-plan skill when available
+**DO**:
+- [X] Add docstrings to all modules, classes, and functions
+- [X] Use type hints (`Mapped[]`, function parameters)
+- [X] Follow repository → service → API layering
+- [X] Validate input in Pydantic schemas
+- [X] Handle exceptions with custom exception classes
 
-**DON'T:**
-- Skip the planning step (causes rework)
-- Modify generated prompts heavily (go back to Project)
-- Mix multiple features in one session
-- Skip testing step
+**DON'T**:
+- [-] Put business logic in routes (belongs in service layer)
+- [-] Put business logic in repositories (only data access)
+- [-] Skip docstrings (Ruff will fail)
 
-### Managing Token Usage (Pro Plan)
+### Security
 
-**Claude.ai Project:**
-- Cost: Low (1-2K tokens per prompt generation)
-- Generous limits
-- Keep conversation history for context
+**DO**:
+- [X] Hash passwords in services using `security.get_password_hash()`
+- [X] Check permissions at API layer with `require_permissions()`
+- [X] Validate all input via Pydantic schemas
+- [X] Use UUIDs for IDs (not sequential integers)
+- [X] Sanitize database queries (SQLAlchemy prevents SQL injection)
 
-**Claude Code:**
-- Cost: Variable (5-15K per feature with optimized prompts)
-- Use `/compact` at 70% to avoid auto-compression
-- Use `/clear` between features
-- Plan mode adds tokens but saves overall (prevents rework)
+**DON'T**:
+- [-] Hash passwords in models (do it in services)
+- [-] Store passwords in plain text
+- [-] Trust user input without validation
+- [-] Return sensitive data in API responses (filter in schemas)
 
-**Combined Benefit:**
-This workflow reduces total Claude Code token usage by 50-60% compared to ad-hoc development.
+### Performance
 
-#### Choosing Between Sonnet and Opus
+**DO**:
+- [X] Use `async`/`await` throughout
+- [X] Batch database operations when possible
+- [X] Add indexes to frequently queried columns
+- [X] Use pagination for list endpoints (`skip`/`limit`)
+- [X] Use `selectinload()` to avoid N+1 queries
 
-Claude Code allows you to select the model for each session. Here's when to use each:
+**DON'T**:
+- [-] Load all records without pagination
+- [-] Make repeated database calls in loops (use joins or batch queries)
+- [-] Over-index (indexes have write cost)
 
-**Use Sonnet (claude-sonnet-4-5) for:**
-- Straightforward CRUD implementations following established patterns
-- Refactoring existing code with clear requirements
-- Simple bug fixes and minor enhancements
-- Routine database migrations
-- Adding tests for existing features
-- **Token savings:** ~60-70% compared to Opus
+### Error Handling
 
-**Use Opus (claude-opus-4-5) for:**
-- Complex architectural decisions requiring deep reasoning
-- Features involving multiple databases and cross-cutting concerns
-- Debugging subtle issues or edge cases
-- Performance optimizations requiring trade-off analysis
-- Security-critical implementations
-- Novel features without existing patterns
+**DO**:
+- [X] Raise specific exceptions (`NotFoundException`, `ForbiddenException`)
+- [X] Include helpful error messages
+- [X] Return appropriate HTTP status codes (404, 403, 400, etc.)
+- [X] Log errors for debugging
 
-**Switching models:**
+**DON'T**:
+- [-] Return generic "Internal Server Error" messages
+- [-] Expose sensitive details in error responses
+- [-] Swallow exceptions without logging
+
+---
+
+## Common Issues
+
+### Migration Conflicts
+
+**Problem**: Migration fails with "table already exists"
+
+**Solution**:
 ```bash
-# In Claude Code:
-/model sonnet    # Switch to Sonnet for routine tasks
-/model opus      # Switch to Opus for complex reasoning
+# Rollback one migration
+uv run alembic downgrade -1
+
+# Re-run migration
+uv run alembic upgrade head
+
+# Or skip migration if already applied manually
+uv run alembic stamp head
 ```
 
-**Pro tip:** Start with Sonnet for most tasks. If Claude struggles or the problem requires deeper reasoning, switch to Opus mid-session using `/model opus`.
+### Circular Imports
 
-### Dual Database Considerations
+**Problem**: `ImportError: cannot import name 'X' from partially initialized module`
 
-**When to use PostgreSQL:**
-- Structured data requiring ACID transactions
-- Foreign key relationships
-- Complex joins
-- Billing and payment data
-- User accounts and permissions
+**Solution**:
+- Move imports inside functions
+- Use `TYPE_CHECKING` for type hints only:
+ ```python
+ from typing import TYPE_CHECKING
 
-**When to use MongoDB:**
-- Flexible schema (evolving data models)
-- High-write workloads (logging, analytics)
-- Document-oriented data
-- Nested structures
-- Time-series data
+ if TYPE_CHECKING:
+ from app.models.category import Category
+ ```
 
-**When to use both (via Unit of Work):**
-- Features spanning both databases
-- Maintaining consistency across databases
-- Cross-database transactions
+### Type Errors
 
-Ask the Claude.ai Project to recommend database choice when describing features.
+**Problem**: mypy reports type errors
 
----
-
-## Troubleshooting
-
-### "Generated prompt is too generic"
-
-**Solution:**
-Provide more context in Claude.ai Project:
-- Describe user flow step-by-step
-- Mention related features
-- Specify business constraints
-- Include edge cases
-- Reference similar existing features
-
-### "Claude Code isn't following patterns"
-
-**Solution:**
-1. Update project knowledge with examples of well-implemented features
-2. Document pattern changes in backend-patterns.md
-3. Be explicit in custom instructions about conventions
-
-### "Prompt too long for Claude Code"
-
-**Solution:**
-Ask Project to break into phases:
-```
-"Break this feature into 3 implementable phases.
-Generate prompts for each phase separately."
-```
-
-### "Feature requires both databases but prompt only mentions one"
-
-**Solution:**
-In Claude.ai Project:
-```
-"This feature needs both PostgreSQL and MongoDB.
-Recommend the best data split between databases."
-```
-
-### "Tests are failing after implementation"
-
-**Solution:**
-In Claude Code:
-```
-"Review the failing tests:
-[paste test output]
-
-Fix the implementation to pass all tests."
-```
-
----
-
-## Advanced Workflows
-
-### Creating Custom Skills
-
-Beyond feature-from-plan, you can create project-specific skills.
-
-**Example: Database Schema Validator**
+**Solution**:
 ```bash
-# In Claude Code:
-"Use the skill-creator skill to create 'schema-validator' that:
-- Checks PostgreSQL models against MongoDB documents
-- Identifies potential data consistency issues
-- Suggests improvements"
+# Run mypy to see all errors
+uv run mypy app
+
+# Common fixes:
+# - Add type hints to function parameters
+# - Use Optional[] for nullable fields
+# - Use list[] instead of List (Python 3.9+)
 ```
 
-### Automated Documentation
+### Permission Denied
 
-Add to your workflow:
+**Problem**: User can't access endpoint even with correct credentials
 
-**In Claude.ai Project custom instructions:**
-```
-After generating implementation prompts, also generate:
-1. API documentation updates
-2. README changes (if major feature)
-3. Migration rollback procedure
-```
-
-### Team Collaboration
-
-**Share the Project:**
-1. Export project knowledge files
-2. Share with team members
-3. Everyone uses same patterns and context
-
-**Version Control:**
-- Commit `.claude/` directory
-- Document features in project knowledge
-- Keep saas-context.md updated
+**Solution**:
+- Check user has required role assigned in database
+- Verify role has required permission
+- Check endpoint uses correct permission in `require_permissions()`
+- Verify token contains permissions (decode JWT token)
 
 ---
 
-## Need Help?
+## Next Steps
 
-- Review [example prompts](prompts/EXAMPLE_USAGE.md)
-- Check [boilerplate structure documentation](prompts/backend-patterns.md)
-- Examine existing features in codebase
-- Update saas-context.md as project evolves
-- Use skill-creator for custom workflows
+After implementing a feature:
+
+1. **Run Tests**: `uv run pytest backend/tests/`
+2. **Check Types**: `uv run mypy app`
+3. **Format Code**: `uv run ruff format app tests`
+4. **Lint Code**: `uv run ruff check --fix app tests`
+5. **Test API**: Open http://localhost:8000/docs and test endpoints
+6. **Generate Frontend Types**: `cd frontend && npm run generate:types`
+7. **Commit**: Create atomic commit with clear message
+
+---
+
+## Additional Resources
+
+- **Architecture Details**: See `docs/ARCHITECTURE.md` for system design
+- **Frontend Integration**: See `frontend/docs/FEATURE_WORKFLOW.md` for frontend workflow
+- **Fullstack Workflow**: See `docs/FULLSTACK_WORKFLOW.md` for complete E2E workflows
+- **API Patterns**: See `docs/prompts/integration-patterns.md` for detailed API patterns
+
+---
+
+## Claude Code Integration (Optional)
+
+This boilerplate includes Claude Code skills for faster development:
+
+- `/fastapi-model` - Generate model with boilerplate
+- `/fastapi-migration` - Create Alembic migration
+- `/fastapi-permission` - Add permissions to RBAC
+- `/fastapi-endpoint` - Generate complete CRUD endpoint
+- `/fastapi-test` - Generate test files
+
+**See**: `CLAUDE_CODE_BEST_PRACTICES.md` for Claude Code optimization strategies.
+
+**Note**: These skills are optional tools. This workflow works with any IDE or editor.
