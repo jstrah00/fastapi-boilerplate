@@ -2,6 +2,18 @@
 
 Production-ready FastAPI boilerplate with PostgreSQL + MongoDB support, designed for quick MVP development. Includes integrated Claude Code skills and workflow optimizations for AI-assisted development.
 
+## Available Claude Code Skills
+
+Use these skills to rapidly generate backend code following project conventions:
+
+- `/fastapi-endpoint` - Generate complete CRUD endpoint with schema, repository, service, and router
+- `/fastapi-model` - Create SQLAlchemy models with proper typing, relationships, and indexes
+- `/fastapi-migration` - Create and manage Alembic database migrations
+- `/fastapi-permission` - Add new permissions and roles to RBAC system
+- `/fastapi-test` - Generate comprehensive unit and integration tests
+
+**See**: `CLAUDE.md` for detailed usage and patterns
+
 ## Features
 
 - **FastAPI** with async support

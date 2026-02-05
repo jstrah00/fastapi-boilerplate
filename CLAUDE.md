@@ -9,9 +9,24 @@ uv run python scripts/init_db.py  # Creates admin@example.com / admin123
 uv run dev  # http://localhost:8000
 ```
 
+## Environment Configuration
+
+**Required variables** (edit `.env` after copying from `.env.example`):
+```bash
+# Security (MUST change in production)
+SECRET_KEY=your-secret-key-here  # Generate with: openssl rand -hex 32
+
+# Database URLs
+DATABASE_URL=postgresql://user:pass@localhost:5432/db_name
+MONGODB_URL=mongodb://localhost:27017/db_name
+
+# CORS (frontend URLs)
+CORS_ORIGINS=["http://localhost:5173"]  # JSON array format
+```
+
 ## Claude Code Skills (Use with @skill-name)
 - `@fastapi-endpoint` - Generate endpoints with dependencies
-- `@fastapi-model` - Create PostgreSQL/MongoDB models  
+- `@fastapi-model` - Create PostgreSQL/MongoDB models
 - `@fastapi-permission` - Add RBAC permissions
 - `@fastapi-migration` - Alembic migrations
 - `@fastapi-test` - Generate test files
@@ -85,7 +100,18 @@ uv run alembic upgrade head
 **6. Endpoint** → Invoke `@fastapi-endpoint`
 ```python
 # app/api/v1/your_endpoint.py
-@router.post("/", response_model=Response)
+"""API endpoints for YourResource management."""
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.common.dependencies import get_db, get_current_user
+from app.models.user import User
+from app.schemas.your_schema import CreateSchema, ResponseSchema
+
+router = APIRouter()
+
+@router.post("/", response_model=ResponseSchema)
 def create(
     data: CreateSchema,
     db: Session = Depends(get_db),  # MUST come before get_current_user
@@ -93,7 +119,7 @@ def create(
 ):
     # Instantiate repo → service → return
 ```
-- **MUST**: Docstring describing API endpoints
+- **MUST**: Module docstring at top, describing API endpoints
 
 **7. Register** → Add to `app/api/v1/router.py`
 
