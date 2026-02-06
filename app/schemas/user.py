@@ -47,14 +47,19 @@ Example:
             "status": "active",
             "role": "user",
             "is_admin": false,
+            "permissions": ["items:read", "items:create", "items:update"],
             "created_at": "2024-01-15T10:30:00Z",
             "updated_at": "2024-01-15T10:30:00Z"
         }
 """
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, computed_field
+
+if TYPE_CHECKING:
+    from app.models.postgres.user import User
 
 
 # =============================================================================
@@ -130,6 +135,8 @@ class UserResponse(UserBase):
     Schema for user response (without sensitive data).
 
     Includes role and permissions for frontend authorization.
+    The 'permissions' field contains all effective permissions
+    (combining role-based + custom permissions).
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -141,6 +148,24 @@ class UserResponse(UserBase):
     is_admin: bool  # Computed property from role
     created_at: datetime
     updated_at: datetime
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def permissions(self) -> list[str]:
+        """
+        Get all effective permissions for this user.
+
+        Combines role-based permissions with custom permissions.
+        This field is computed dynamically and sent to frontend for
+        client-side permission checks.
+
+        Returns:
+            List of permission strings (e.g., ["users:read", "items:create"])
+        """
+        from app.common.permissions import get_user_permissions
+
+        user_perms = get_user_permissions(self.role, self.custom_permissions)
+        return sorted([perm.value for perm in user_perms])
 
 
 class UserListResponse(BaseModel):

@@ -19,7 +19,7 @@ Dependencies:
     - app.api.deps: get_current_user (imported at runtime to avoid circular import)
 
 Related files:
-    - app/api/deps.py: CurrentUser, CurrentAdmin dependencies
+    - app/api/deps.py: CurrentUser, get_current_user dependencies
     - app/models/postgres/user.py: User.role and User.custom_permissions fields
     - app/schemas/user.py: UserCreate, UserRoleUpdate with role validation
     - app/api/v1/users.py: Example usage in endpoints

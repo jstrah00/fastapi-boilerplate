@@ -7,6 +7,7 @@ All models inherit from Base defined in app.db.postgres.
 Key components:
     - User: User model with authentication and RBAC
     - Item: Example CRUD resource model
+    - RefreshTokenBlacklist: Blacklist for used/revoked refresh tokens
 
 Dependencies:
     - sqlalchemy: ORM framework
@@ -23,7 +24,7 @@ Common commands:
 Example:
     Import models::
 
-        from app.models.postgres import User, Item
+        from app.models.postgres import User, Item, RefreshTokenBlacklist
         # or
         from app.models.postgres.user import User
 
@@ -33,8 +34,10 @@ Note:
 """
 from app.models.postgres.user import User
 from app.models.postgres.item import Item
+from app.models.postgres.refresh_token_blacklist import RefreshTokenBlacklist
 
 __all__ = [
     "User",
     "Item",
+    "RefreshTokenBlacklist",
 ]

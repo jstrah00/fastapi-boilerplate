@@ -1,9 +1,9 @@
 """
 User API endpoints with authentication and role-based permissions.
 
-Provides CRUD operations for user management with two authorization approaches:
-1. Simple admin check using CurrentAdmin dependency
-2. Fine-grained RBAC using require_permissions dependency
+Provides CRUD operations for user management using role-based access control (RBAC):
+1. Admin-only endpoints using require_admin() dependency
+2. Fine-grained RBAC using require_permissions() dependency
 
 Key components:
     - POST /users/: Create user (admin only)
@@ -18,8 +18,8 @@ Key components:
 Dependencies:
     - app.services.user_service: User business logic
     - app.schemas.user: Request/response schemas
-    - app.api.deps: CurrentUser, CurrentAdmin, UserSvc
-    - app.common.permissions: require_permissions
+    - app.api.deps: CurrentUser, UserSvc
+    - app.common.permissions: require_permissions, require_admin
 
 Related files:
     - app/services/user_service.py: Business logic
@@ -54,7 +54,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status, HTTPException
 
-from app.api.deps import CurrentUser, CurrentAdmin, UserSvc, UserRepo, get_current_user
+from app.api.deps import CurrentUser, UserSvc, UserRepo, get_current_user
 from app.schemas.user import (
     UserCreate,
     UserUpdate,
@@ -65,7 +65,7 @@ from app.schemas.user import (
 )
 from app.common.logging import get_logger
 from app.common.exceptions import NotFoundError, AlreadyExistsError, ValidationError
-from app.common.permissions import Permission, require_permissions
+from app.common.permissions import Permission, require_permissions, require_admin
 from app.models.postgres.user import User
 
 logger = get_logger(__name__)
@@ -82,8 +82,8 @@ router = APIRouter(prefix="/users", tags=["users"])
 )
 async def create_user(
     user_data: UserCreate,
-    current_user: CurrentAdmin,
     user_service: UserSvc,
+    current_user: User = Depends(require_admin()),
 ) -> UserResponse:
     """Create a new user."""
     try:
@@ -116,8 +116,8 @@ async def get_current_user_info(
     description="List all users. Only admins can list all users.",
 )
 async def list_users(
-    current_user: CurrentAdmin,
     user_repo: UserRepo,
+    current_user: User = Depends(require_admin()),
     skip: int = 0,
     limit: int = 100,
 ) -> UserListResponse:
@@ -236,8 +236,8 @@ async def change_password(
 )
 async def deactivate_user(
     user_id: UUID,
-    current_user: CurrentAdmin,
     user_service: UserSvc,
+    current_user: User = Depends(require_admin()),
 ) -> None:
     """Deactivate a user."""
     try:

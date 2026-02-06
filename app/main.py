@@ -59,6 +59,9 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.common.logging import configure_logging, get_logger
@@ -75,6 +78,9 @@ from app.api.handlers import (
 # Configure logging first
 configure_logging()
 logger = get_logger(__name__)
+
+# Global rate limiter instance
+limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -139,6 +145,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Register rate limiter
+app.state.limiter = limiter
+
 # =============================================================================
 # Middleware
 # =============================================================================
@@ -155,6 +164,7 @@ app.add_middleware(
 # =============================================================================
 app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
 

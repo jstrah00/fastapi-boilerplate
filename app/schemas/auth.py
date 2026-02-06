@@ -70,6 +70,7 @@ class LoginRequest(BaseModel):
 
     email: EmailStr
     password: str
+    remember_me: bool = False  # Optional: Longer session (30 days vs 7 days)
 
 
 class RefreshTokenRequest(BaseModel):

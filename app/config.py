@@ -97,6 +97,14 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER_ME: int = 30  # For "remember me" feature
+
+    # =========================================================================
+    # Cookie Settings (for httpOnly cookies)
+    # =========================================================================
+    COOKIE_SECURE: bool = False  # Set to True in production (HTTPS only)
+    COOKIE_SAMESITE: str = "lax"  # lax, strict, or none
+    COOKIE_DOMAIN: str | None = None  # For subdomains if needed
 
     # =========================================================================
     # CORS Settings
@@ -154,6 +162,21 @@ class Settings(BaseSettings):
     # =========================================================================
     # Helper Properties
     # =========================================================================
+    @property
+    def access_token_expires_seconds(self) -> int:
+        """Access token expiration in seconds."""
+        return self.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+    @property
+    def refresh_token_expires_seconds(self) -> int:
+        """Refresh token expiration in seconds."""
+        return self.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
+
+    @property
+    def refresh_token_remember_me_expires_seconds(self) -> int:
+        """Refresh token expiration for 'remember me' in seconds."""
+        return self.REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER_ME * 24 * 60 * 60
+
     @property
     def is_production(self) -> bool:
         """Check if running in production."""

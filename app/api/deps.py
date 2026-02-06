@@ -57,13 +57,16 @@ Adding new dependencies:
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_db
 from app.repositories.user_repo import UserRepository
 from app.repositories.item_repo import ItemRepository
+from app.repositories.refresh_token_blacklist_repository import (
+    RefreshTokenBlacklistRepository,
+)
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 from app.services.item_service import ItemService
@@ -95,6 +98,13 @@ async def get_item_repository(
     return ItemRepository(db)
 
 
+async def get_blacklist_repository(
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> RefreshTokenBlacklistRepository:
+    """Get refresh token blacklist repository instance."""
+    return RefreshTokenBlacklistRepository(db)
+
+
 # =============================================================================
 # Service Dependencies
 # =============================================================================
@@ -107,10 +117,11 @@ async def get_user_service(
 
 
 async def get_auth_service(
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
+    blacklist_repo: Annotated[RefreshTokenBlacklistRepository, Depends(get_blacklist_repository)],
 ) -> AuthService:
-    """Get auth service instance."""
-    return AuthService(user_repo)
+    """Get auth service instance with blacklist support."""
+    return AuthService(user_repo, blacklist_repo)
 
 
 async def get_item_service(
@@ -125,14 +136,25 @@ async def get_item_service(
 # =============================================================================
 
 async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security_scheme)],
+    request: Request,
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None,
+        Depends(HTTPBearer(auto_error=False))
+    ],
     user_repo: Annotated[UserRepository, Depends(get_user_repository)],
 ) -> User:
     """
-    Get current authenticated user from JWT token.
+    Get current authenticated user from JWT token (dual-mode).
+
+    Supports TWO authentication methods:
+    1. Authorization: Bearer <token> header (for Swagger/API clients)
+    2. HttpOnly cookie (for web frontend)
+
+    Priority: Authorization header > Cookie
 
     Args:
-        token: JWT access token
+        request: FastAPI request object (for cookies)
+        credentials: Optional Bearer token credentials
         user_repo: User repository
 
     Returns:
@@ -147,8 +169,24 @@ async def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+    token = None
+
+    # Try Authorization header first (Swagger, Postman, curl)
+    if credentials:
+        token = credentials.credentials
+        logger.debug("auth_method", method="bearer_token")
+
+    # Fallback to cookie (frontend)
+    if not token:
+        token = request.cookies.get("access_token")
+        if token:
+            logger.debug("auth_method", method="cookie")
+
+    if not token:
+        logger.warning("auth_failed", reason="no_token_provided")
+        raise credentials_exception
+
     # Decode token
-    token = credentials.credentials
     payload = decode_token(token)
     if payload is None:
         logger.warning("invalid_token", message="Token decode failed")
@@ -243,6 +281,7 @@ CurrentAdmin = Annotated[User, Depends(get_current_admin)]
 # Repositories
 UserRepo = Annotated[UserRepository, Depends(get_user_repository)]
 ItemRepo = Annotated[ItemRepository, Depends(get_item_repository)]
+BlacklistRepo = Annotated[RefreshTokenBlacklistRepository, Depends(get_blacklist_repository)]
 
 # Services
 UserSvc = Annotated[UserService, Depends(get_user_service)]
