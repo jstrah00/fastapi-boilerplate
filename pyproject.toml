@@ -48,6 +48,9 @@ dependencies = [
 
     # Monitoring & Logging
     "structlog>=24.4.0",
+
+    # Chat - Stream Chat
+    "stream-chat>=4.15.0",
 ]
 
 [dependency-groups]

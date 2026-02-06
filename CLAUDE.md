@@ -24,6 +24,13 @@ MONGODB_URL=mongodb://localhost:27017/db_name
 BACKEND_CORS_ORIGINS=["http://localhost:5173"] # JSON array format
 ```
 
+### Stream Chat (Optional)
+```bash
+STREAM_API_KEY=your-stream-api-key    # From https://getstream.io/dashboard
+STREAM_API_SECRET=your-stream-api-secret
+```
+These are passed via `docker-compose.yml` from the root `.env` file. Chat endpoints return 503 if not configured.
+
 ### CORS Configuration
 
 **Format**: JSON array of allowed origin URLs
@@ -201,6 +208,12 @@ def test_create(service):
 ```
 
 ---
+
+## Reference Implementations
+
+- Full CRUD: `app/api/v1/items.py` (model → repo → service → endpoint)
+- Auth: `app/api/v1/auth.py` (JWT login/refresh/logout)
+- Third-party integration: `app/api/v1/chat.py` (Stream Chat — no model/repo/service, just token endpoint + user listing)
 
 ## Critical Gotchas
 

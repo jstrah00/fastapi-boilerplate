@@ -152,6 +152,13 @@ class Settings(BaseSettings):
     TELEGRAM_ALERTS_ENABLED: bool = False
 
     # =========================================================================
+    # Stream Chat (Optional)
+    # NOTE: Required only if using the chat feature
+    # =========================================================================
+    STREAM_API_KEY: str | None = None
+    STREAM_API_SECRET: str | None = None
+
+    # =========================================================================
     # Helper Properties
     # =========================================================================
     @property

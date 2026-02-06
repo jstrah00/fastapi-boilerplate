@@ -45,7 +45,7 @@ Example:
 """
 from fastapi import APIRouter
 
-from app.api.v1 import users, auth, items
+from app.api.v1 import users, auth, items, chat
 
 api_router = APIRouter()
 
@@ -53,6 +53,7 @@ api_router = APIRouter()
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
 api_router.include_router(items.router)
+api_router.include_router(chat.router)
 
 # NOTE: Add more routers as you create them:
 # api_router.include_router(my_resource.router)
