@@ -197,3 +197,11 @@ class ContractorPublicProfile(BaseModel):
 
     user: PublicUserInfo
     profile: ContractorProfileResponse
+
+
+class UnifiedPublicProfile(BaseModel):
+    """Unified public profile that works for any role."""
+
+    user: PublicUserInfo
+    aretan_profile: AretanProfileResponse | None = None
+    contractor_profile: ContractorProfileResponse | None = None

@@ -23,6 +23,7 @@ from app.schemas.profile import (
     ContractorPublicProfile,
     AretanProfileResponse,
     ContractorProfileResponse,
+    UnifiedPublicProfile,
 )
 from app.common.logging import get_logger
 from app.common.exceptions import NotFoundError, ValidationError
@@ -119,6 +120,74 @@ class ProfileService:
         return ContractorPublicProfile(
             user=user_info,
             profile=ContractorProfileResponse.model_validate(user.contractor_profile),
+        )
+
+    async def get_public_profile(
+        self, user_id: UUID, viewer: User | None = None
+    ) -> UnifiedPublicProfile:
+        """Get unified public profile for any user, regardless of role."""
+        result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            raise NotFoundError(
+                message="User not found",
+                details={"user_id": str(user_id)},
+            )
+
+        is_owner = viewer and viewer.id == user_id
+        is_admin = viewer and viewer.is_admin
+
+        aretan_response = None
+        contractor_response = None
+
+        if user.role == "aretan" and user.aretan_profile:
+            profile = user.aretan_profile
+            user_info = PublicUserInfo(
+                id=user.id,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                avatar_url=user.avatar_url,
+                country=user.country,
+                role=user.role,
+                status=user.status,
+                phone=user.phone if (is_owner or is_admin or profile.phone_visible) else None,
+                contact_email=user.contact_email if (is_owner or is_admin or profile.email_visible) else None,
+            )
+            aretan_response = AretanProfileResponse.model_validate(profile)
+        elif user.role == "contratante" and user.contractor_profile:
+            user_info = PublicUserInfo(
+                id=user.id,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                avatar_url=user.avatar_url,
+                country=user.country,
+                role=user.role,
+                status=user.status,
+                phone=user.phone,
+                contact_email=user.contact_email,
+            )
+            contractor_response = ContractorProfileResponse.model_validate(
+                user.contractor_profile
+            )
+        else:
+            user_info = PublicUserInfo(
+                id=user.id,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                avatar_url=user.avatar_url,
+                country=user.country,
+                role=user.role,
+                status=user.status,
+                phone=None,
+                contact_email=None,
+            )
+
+        return UnifiedPublicProfile(
+            user=user_info,
+            aretan_profile=aretan_response,
+            contractor_profile=contractor_response,
         )
 
     # =========================================================================

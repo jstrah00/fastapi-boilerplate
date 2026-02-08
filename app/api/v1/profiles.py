@@ -13,6 +13,7 @@ from app.services.profile_service import ProfileService
 from app.schemas.profile import (
     AretanPublicProfile,
     ContractorPublicProfile,
+    UnifiedPublicProfile,
     AretanProfileResponse,
     AretanProfileUpdate,
     ContractorProfileResponse,
@@ -79,6 +80,23 @@ async def get_contractor_profile(
     """View a Contractor user's public profile."""
     try:
         return await profile_service.get_contractor_profile(user_id, viewer=current_user)
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+
+
+@router.get(
+    "/public/{user_id}",
+    response_model=UnifiedPublicProfile,
+    summary="Get any user's public profile",
+)
+async def get_public_profile(
+    user_id: UUID,
+    profile_service: ProfileSvc,
+    current_user: CurrentUser,
+) -> UnifiedPublicProfile:
+    """View any user's public profile (auto-detects role)."""
+    try:
+        return await profile_service.get_public_profile(user_id, viewer=current_user)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
 
