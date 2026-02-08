@@ -35,9 +35,17 @@ Note:
 from app.models.postgres.user import User
 from app.models.postgres.item import Item
 from app.models.postgres.refresh_token_blacklist import RefreshTokenBlacklist
+from app.models.postgres.post import Post
+from app.models.postgres.comment import Comment
+from app.models.postgres.post_like import PostLike
+from app.models.postgres.notification import Notification
 
 __all__ = [
     "User",
     "Item",
     "RefreshTokenBlacklist",
+    "Post",
+    "Comment",
+    "PostLike",
+    "Notification",
 ]
