@@ -376,3 +376,82 @@ class UserService:
         )
 
         return updated_user
+
+    async def approve_or_reject_user(
+        self,
+        user_id: UUID,
+        action: str,
+        current_user: User,
+    ) -> User:
+        """
+        Approve or reject a pending Aretan user.
+
+        Args:
+            user_id: User ID to approve/reject
+            action: "approve" or "reject"
+            current_user: Admin performing the action
+
+        Returns:
+            Updated user
+
+        Raises:
+            NotFoundError: If user not found
+            ValidationError: If user is not in pending status or not an aretan
+        """
+        user = await self.get_user_by_id(user_id)
+
+        if user.role != "aretan":
+            raise ValidationError(
+                message="Only Aretan users can be approved or rejected",
+                details={"user_id": str(user_id), "role": user.role},
+            )
+
+        if user.status != "pending":
+            raise ValidationError(
+                message=f"User is not pending approval (current status: {user.status})",
+                details={"user_id": str(user_id), "status": user.status},
+            )
+
+        new_status = "active" if action == "approve" else "rejected"
+        updated_user = await self.user_repo.update(user_id, {"status": new_status})
+
+        if not updated_user:
+            raise NotFoundError(
+                message="User not found",
+                details={"user_id": str(user_id)},
+            )
+
+        logger.info(
+            "user_approval_action",
+            user_id=str(user_id),
+            action=action,
+            new_status=new_status,
+            performed_by=str(current_user.id),
+        )
+
+        # TODO: Send approval/rejection email using templates
+
+        return updated_user
+
+    async def get_pending_users(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[User], int]:
+        """
+        Get all users pending approval.
+
+        Args:
+            skip: Pagination offset
+            limit: Page size
+
+        Returns:
+            Tuple of (users list, total count)
+        """
+        users = await self.user_repo.get_all(
+            skip=skip,
+            limit=limit,
+            filters={"status": "pending"},
+        )
+        total = await self.user_repo.count(filters={"status": "pending"})
+        return users, total

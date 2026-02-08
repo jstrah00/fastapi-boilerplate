@@ -456,7 +456,7 @@ wheels = [
 ]
 
 [[package]]
-name = "fastapi-boilerplate"
+name = "a2w-backend"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [

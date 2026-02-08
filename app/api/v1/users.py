@@ -62,6 +62,7 @@ from app.schemas.user import (
     UserResponse,
     UserListResponse,
     UserPasswordUpdate,
+    UserApprovalAction,
 )
 from app.common.logging import get_logger
 from app.common.exceptions import NotFoundError, AlreadyExistsError, ValidationError
@@ -125,6 +126,32 @@ async def list_users(
     users = await user_repo.get_all(skip=skip, limit=limit)
     total = await user_repo.count()
 
+    return UserListResponse(
+        users=[UserResponse.model_validate(u) for u in users],
+        total=total,
+        skip=skip,
+        limit=limit,
+    )
+
+
+# =============================================================================
+# Admin Approval Workflow
+# =============================================================================
+
+@router.get(
+    "/pending",
+    response_model=UserListResponse,
+    summary="List pending users",
+    description="List all users awaiting approval. Admin only.",
+)
+async def list_pending_users(
+    user_service: UserSvc,
+    current_user: User = Depends(require_admin()),
+    skip: int = 0,
+    limit: int = 100,
+) -> UserListResponse:
+    """List all pending users."""
+    users, total = await user_service.get_pending_users(skip=skip, limit=limit)
     return UserListResponse(
         users=[UserResponse.model_validate(u) for u in users],
         total=total,
@@ -292,5 +319,35 @@ async def update_user_role(
     except ValidationError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
+            detail=e.message,
+        )
+
+
+@router.post(
+    "/{user_id}/approval",
+    response_model=UserResponse,
+    summary="Approve or reject user",
+    description="Approve or reject a pending Aretan user. Admin only.",
+)
+async def approve_or_reject_user(
+    user_id: UUID,
+    action_data: UserApprovalAction,
+    user_service: UserSvc,
+    current_user: User = Depends(require_admin()),
+) -> UserResponse:
+    """Approve or reject a pending Aretan user."""
+    try:
+        user = await user_service.approve_or_reject_user(
+            user_id, action_data.action, current_user
+        )
+        return UserResponse.model_validate(user)
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=e.message,
         )

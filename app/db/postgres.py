@@ -126,6 +126,10 @@ async def init_db() -> None:
         async with engine.begin() as conn:
             # Import all models here to ensure they're registered with Base
             from app.models.postgres import user, item  # noqa: F401
+            from app.models.postgres import master_tables  # noqa: F401
+            from app.models.postgres import aretan_profile  # noqa: F401
+            from app.models.postgres import contractor_profile  # noqa: F401
+            from app.models.postgres import work_experience  # noqa: F401
 
             # Create all tables
             await conn.run_sync(Base.metadata.create_all)

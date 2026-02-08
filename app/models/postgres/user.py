@@ -1,16 +1,14 @@
 """
 User model for PostgreSQL with authentication and RBAC support.
 
-Defines the User entity with email/password authentication, role-based permissions,
-and standard fields for user management.
+Defines the User entity for A2W platform with email/password authentication,
+role-based permissions (admin, aretan, contratante), and account management.
 
 Key components:
     - User: SQLAlchemy model with authentication and RBAC fields
-    - email: Unique identifier for authentication
-    - password_hash: Bcrypt-hashed password
-    - role: User role for RBAC (admin, user, etc.)
-    - custom_permissions: Additional permissions beyond role defaults
-    - status: Account status (active, inactive, invited)
+    - Roles: admin, aretan, contratante
+    - Status: pending, active, inactive, rejected, blocked
+    - Login lockout: failed_login_attempts + locked_until
 
 Dependencies:
     - sqlalchemy: ORM and column types
@@ -22,57 +20,19 @@ Related files:
     - app/schemas/user.py: Pydantic schemas for API
     - app/repositories/user_repo.py: Data access methods
     - app/services/user_service.py: Business logic
-
-Common commands:
-    - Create migration: uv run alembic revision --autogenerate -m "update users"
-    - Apply migration: uv run alembic upgrade head
-
-Example:
-    Creating a user::
-
-        from app.models.postgres.user import User
-        from app.common.security import get_password_hash
-
-        user = User(
-            email="user@example.com",
-            first_name="John",
-            last_name="Doe",
-            password_hash=get_password_hash("password123"),
-            role="user",
-            status="active",
-        )
-        session.add(user)
-        await session.commit()
-
-    Checking properties::
-
-        user.full_name  # "John Doe"
-        user.is_active  # True
-        user.is_admin   # False (unless role == "admin")
 """
 from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, DateTime
+from sqlalchemy import String, DateTime, Integer
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.postgres import Base
 
 
 class User(Base):
-    """
-    User model for authentication with role-based permissions.
-
-    # EXAMPLE: User model with email/password authentication and RBAC.
-    # Customize fields based on your project requirements.
-    #
-    # Common additions you might want:
-    # - phone_number: For SMS verification
-    # - avatar_url: For profile pictures
-    # - preferences: JSON field for user settings
-    # - organization_id: For multi-tenant applications
-    """
+    """User model for A2W platform authentication with role-based permissions."""
 
     __tablename__ = "users"
 
@@ -89,15 +49,7 @@ class User(Base):
     # Authentication
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    # OPTIONAL: OAuth support - uncomment if needed
-    # google_id: Mapped[str | None] = mapped_column(
-    #     String(255), unique=True, index=True, nullable=True
-    # )
-
-    # Status: invited, active, inactive
-    # - invited: User was invited but hasn't set password yet
-    # - active: Normal active user
-    # - inactive: Soft-deleted or suspended user
+    # Status: pending, active, inactive, rejected, blocked
     status: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
@@ -105,30 +57,44 @@ class User(Base):
         index=True,
     )
 
-    # ==========================================================================
-    # Role-Based Access Control (RBAC)
-    # See app/core/permissions.py for role and permission definitions
-    # ==========================================================================
-
-    # User role - determines base permissions
-    # Values should match Role enum in app/core/permissions.py
-    # Default roles: "admin", "user"
-    # CUSTOMIZATION: Add more roles like "manager", "moderator", etc.
+    # Role: admin, aretan, contratante
     role: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        default="user",
+        default="aretan",
         index=True,
     )
 
-    # Custom permissions - additional permissions beyond role defaults
-    # This allows granting specific permissions without changing roles
-    # Stored as an array of permission strings (e.g., ["users:read", "items:delete"])
-    # CUSTOMIZATION: Use this for fine-grained permission control
+    # Custom permissions beyond role defaults
     custom_permissions: Mapped[list[str] | None] = mapped_column(
         ARRAY(String(100)),
         nullable=True,
         default=None,
+    )
+
+    # Contact info (shared across roles)
+    phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Profile image
+    avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # Location
+    country: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
+    )
+
+    # Terms acceptance
+    accepted_terms_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Login lockout
+    failed_login_attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     # Timestamps
@@ -144,8 +110,16 @@ class User(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
+    # Relationships
+    aretan_profile: Mapped["AretanProfile | None"] = relationship(
+        "AretanProfile", back_populates="user", uselist=False, lazy="selectin"
+    )
+    contractor_profile: Mapped["ContractorProfile | None"] = relationship(
+        "ContractorProfile", back_populates="user", uselist=False, lazy="selectin"
+    )
+
     def __repr__(self) -> str:
-        return f"<User {self.email} (role: {self.role})>"
+        return f"<User {self.email} (role: {self.role}, status: {self.status})>"
 
     @property
     def full_name(self) -> str:
@@ -161,3 +135,25 @@ class User(Base):
     def is_admin(self) -> bool:
         """Check if user has admin role."""
         return self.role == "admin"
+
+    @property
+    def is_aretan(self) -> bool:
+        """Check if user is an Aretan."""
+        return self.role == "aretan"
+
+    @property
+    def is_contratante(self) -> bool:
+        """Check if user is a Contratante."""
+        return self.role == "contratante"
+
+    @property
+    def is_locked(self) -> bool:
+        """Check if account is locked due to failed login attempts."""
+        if self.locked_until is None:
+            return False
+        return datetime.now(UTC) < self.locked_until
+
+
+# Avoid circular imports - these are imported at module level for type hints
+from app.models.postgres.aretan_profile import AretanProfile  # noqa: E402
+from app.models.postgres.contractor_profile import ContractorProfile  # noqa: E402

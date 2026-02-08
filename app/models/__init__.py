@@ -1,31 +1,18 @@
 """
-Database models for PostgreSQL and MongoDB.
+Database models for PostgreSQL.
 
-This package contains all data model definitions, organized by database type.
-Models define the structure and relationships of data stored in the application.
+This package contains all data model definitions for the A2W platform.
 
-Key components:
-    - postgres/: SQLAlchemy models for relational data
-        - user.py: User model with authentication and RBAC
-        - item.py: Example CRUD resource model
-    - mongodb/: Beanie documents for flexible/document data
-        - document.py: Example document with flexible schema
-
-Dependencies:
-    - sqlalchemy: PostgreSQL ORM
-    - beanie: MongoDB ODM
-    - app.db: Database connections
+Key models:
+    - user.py: User with authentication and RBAC
+    - aretan_profile.py: Extended profile for Aretan users
+    - contractor_profile.py: Extended profile for Contratante users
+    - work_experience.py: Work history for Aretans
+    - master_tables.py: Admin-managed lookup tables (industries, professions, achievements)
+    - item.py: Example CRUD resource (boilerplate reference)
 
 Related files:
     - app/db/postgres.py: Base class and session management
-    - app/db/mongodb.py: Beanie initialization
     - app/repositories/: Data access layer
     - alembic/env.py: Import models for migrations
-
-Example:
-    Import models::
-
-        from app.models.postgres.user import User
-        from app.models.postgres.item import Item
-        from app.models.mongodb.document import ExampleDocument
 """

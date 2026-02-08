@@ -57,11 +57,17 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from app.schemas.auth import LoginRequest, Token, RefreshTokenRequest
+from app.schemas.auth import (
+    LoginRequest,
+    Token,
+    RefreshTokenRequest,
+    PasswordResetRequest,
+    PasswordResetConfirm,
+)
 from app.services.auth_service import AuthService
 from app.api.deps import get_auth_service, CurrentUser
 from app.common.logging import get_logger
-from app.common.exceptions import AuthenticationError
+from app.common.exceptions import AuthenticationError, ValidationError, NotFoundError
 from app.config import Settings, settings as global_settings
 
 # Type alias for settings dependency
@@ -265,3 +271,54 @@ async def logout(
 
     logger.info("user_logout", user_id=str(current_user.id), email=current_user.email)
     return None
+
+
+@router.post(
+    "/forgot-password",
+    status_code=status.HTTP_200_OK,
+    summary="Request password reset",
+    description="Send a password reset email. Always returns 200 to prevent email enumeration. Rate limited to 3 requests/minute.",
+)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    body: PasswordResetRequest,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict[str, str]:
+    """Request a password reset link."""
+    reset_url = await auth_service.request_password_reset(body.email)
+
+    if reset_url:
+        # TODO: Send email with reset_url using email template password_reset.html
+        logger.info("password_reset_email_sent", email=body.email, reset_url=reset_url)
+
+    # Always return success to prevent email enumeration
+    return {"message": "If the email exists, a reset link has been sent"}
+
+
+@router.post(
+    "/reset-password",
+    status_code=status.HTTP_200_OK,
+    summary="Reset password",
+    description="Reset password using a valid reset token. Rate limited to 5 requests/minute.",
+)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    body: PasswordResetConfirm,
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict[str, str]:
+    """Reset password with token."""
+    try:
+        await auth_service.reset_password(body.token, body.new_password)
+        return {"message": "Password has been reset successfully"}
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=e.message,
+        )
+    except NotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=e.message,
+        )

@@ -1,5 +1,5 @@
 # =============================================================================
-# Docker Compose - FastAPI Boilerplate Development Environment
+# Docker Compose - A2W Backend Development Environment
 #
 # USAGE:
 #   docker-compose up -d           # Start all services

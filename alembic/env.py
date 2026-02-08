@@ -31,9 +31,10 @@ from app.db.postgres import Base
 # Add new model imports here when you create new models.
 # =============================================================================
 from app.models.postgres import user, item  # noqa: F401
-
-# CUSTOMIZATION: Add more model imports as you create them:
-# from app.models.postgres import your_model  # noqa: F401
+from app.models.postgres import master_tables  # noqa: F401
+from app.models.postgres import aretan_profile  # noqa: F401
+from app.models.postgres import contractor_profile  # noqa: F401
+from app.models.postgres import work_experience  # noqa: F401
 
 # Alembic Config object
 config = context.config

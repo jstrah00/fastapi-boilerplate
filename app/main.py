@@ -1,5 +1,5 @@
 """
-FastAPI Boilerplate - Main Application Entry Point.
+A2W Backend - Main Application Entry Point.
 
 Initializes the FastAPI application with middleware, exception handlers,
 database connections, and API routers. Manages application lifecycle.
@@ -56,9 +56,12 @@ Lifecycle events:
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -67,7 +70,6 @@ from app.config import settings
 from app.common.logging import configure_logging, get_logger
 from app.common.exceptions import AppException
 from app.db.postgres import init_db as init_postgres, close_db as close_postgres
-from app.db.mongodb import init_mongodb, close_mongodb
 from app.api.v1.router import api_router
 from app.api.handlers import (
     app_exception_handler,
@@ -106,11 +108,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if settings.is_development:
             await init_postgres()
 
-        # Initialize MongoDB
-        # NOTE: If not using MongoDB, comment out or remove this line
-        await init_mongodb()
-
-        logger.info("databases_initialized", message="All databases ready")
+        logger.info("databases_initialized", message="PostgreSQL ready")
 
     except Exception as e:
         logger.error("startup_failed", error=str(e), exc_info=True)
@@ -125,8 +123,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     try:
         await close_postgres()
-        await close_mongodb()
-        logger.info("databases_closed", message="All database connections closed")
+        logger.info("databases_closed", message="PostgreSQL connections closed")
 
     except Exception as e:
         logger.error("shutdown_error", error=str(e), exc_info=True)
@@ -138,7 +135,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="FastAPI Boilerplate with PostgreSQL + MongoDB support",
+    description="A2W Platform API",
     docs_url="/docs" if settings.DEBUG else None,  # Disable docs in production
     redoc_url="/redoc" if settings.DEBUG else None,
     openapi_url="/openapi.json",
@@ -185,6 +182,13 @@ async def health_check() -> dict[str, str]:
 # Include API Routers
 # =============================================================================
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+# =============================================================================
+# Static Files (uploaded images)
+# =============================================================================
+uploads_dir = Path("uploads")
+uploads_dir.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 
 # =============================================================================

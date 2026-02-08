@@ -1,20 +1,20 @@
 # =============================================================================
-# pyproject.toml - FastAPI Boilerplate Configuration
+# pyproject.toml - A2W Backend Configuration
 #
 # CONFIGURATION: Update project name, description, and author information.
 # =============================================================================
 
 [project]
-name = "fastapi-boilerplate"
+name = "a2w-backend"
 version = "1.0.0"
-description = "FastAPI boilerplate with PostgreSQL + MongoDB support"
+description = "A2W platform backend - FastAPI with PostgreSQL + MongoDB"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [
     { name = "Your Name", email = "your.email@example.com" }
 ]
-keywords = ["fastapi", "api", "boilerplate", "postgresql", "mongodb"]
+keywords = ["fastapi", "api", "a2w", "postgresql", "mongodb"]
 
 dependencies = [
     # FastAPI & Web Framework

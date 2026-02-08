@@ -167,6 +167,44 @@ def create_refresh_token(
     return encoded_jwt
 
 
+def create_password_reset_token(
+    subject: str,
+    expires_delta: timedelta | None = None,
+) -> str:
+    """
+    Create a JWT token for password reset.
+
+    Args:
+        subject: Token subject (usually user ID)
+        expires_delta: Optional custom expiration time
+
+    Returns:
+        Encoded JWT token
+    """
+    if expires_delta:
+        expire = datetime.now(UTC) + expires_delta
+    else:
+        expire = datetime.now(UTC) + timedelta(
+            minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+        )
+
+    to_encode = {
+        "sub": subject,
+        "exp": expire,
+        "type": "password_reset",
+    }
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+    )
+
+    logger.debug("password_reset_token_created", subject=subject)
+
+    return encoded_jwt
+
+
 def decode_token(token: str) -> dict[str, Any] | None:
     """
     Decode and validate a JWT token.

@@ -66,36 +66,58 @@ logger = get_logger(__name__)
 # =============================================================================
 
 class Permission(str, Enum):
-    """
-    Permission definitions for the application.
+    """Permission definitions for the A2W platform."""
 
-    CUSTOMIZATION: Add new permissions as needed for your application.
-    Use format: RESOURCE_ACTION (e.g., USERS_READ, ITEMS_DELETE)
-
-    Examples of common permissions you might add:
-    - REPORTS_GENERATE = "reports:generate"
-    - SETTINGS_MANAGE = "settings:manage"
-    - BILLING_VIEW = "billing:view"
-    """
-
-    # User management permissions
+    # User management
     USERS_READ = "users:read"
     USERS_CREATE = "users:create"
     USERS_UPDATE = "users:update"
     USERS_DELETE = "users:delete"
+    USERS_APPROVE = "users:approve"
 
-    # Item/Resource permissions (example - customize for your domain)
+    # Profile
+    PROFILE_READ = "profile:read"
+    PROFILE_UPDATE = "profile:update"
+
+    # Master lists (admin CRUD)
+    MASTER_LISTS_READ = "master_lists:read"
+    MASTER_LISTS_MANAGE = "master_lists:manage"
+
+    # Feed / Posts
+    POSTS_READ = "posts:read"
+    POSTS_CREATE = "posts:create"
+    POSTS_UPDATE_OWN = "posts:update_own"
+    POSTS_DELETE_OWN = "posts:delete_own"
+    POSTS_MODERATE = "posts:moderate"
+
+    # Comments
+    COMMENTS_CREATE = "comments:create"
+    COMMENTS_MODERATE = "comments:moderate"
+
+    # Likes
+    LIKES_CREATE = "likes:create"
+
+    # Directory / Search
+    DIRECTORY_ARETANS = "directory:aretans"
+    DIRECTORY_CONTRACTORS = "directory:contractors"
+
+    # Contact requests
+    CONTACT_REQUEST_SEND = "contact_request:send"
+    CONTACT_REQUEST_RESPOND = "contact_request:respond"
+
+    # Notifications
+    NOTIFICATIONS_READ = "notifications:read"
+
+    # Admin
+    ADMIN_ACCESS = "admin:access"
+    ADMIN_SETTINGS = "admin:settings"
+    ADMIN_METRICS = "admin:metrics"
+
+    # Legacy (boilerplate items)
     ITEMS_READ = "items:read"
     ITEMS_CREATE = "items:create"
     ITEMS_UPDATE = "items:update"
     ITEMS_DELETE = "items:delete"
-
-    # Admin permissions
-    ADMIN_ACCESS = "admin:access"
-    ADMIN_SETTINGS = "admin:settings"
-
-    # Add your custom permissions here:
-    # EXAMPLE_PERMISSION = "example:action"
 
 
 # =============================================================================
@@ -103,58 +125,41 @@ class Permission(str, Enum):
 # =============================================================================
 
 class Role(str, Enum):
-    """
-    Role definitions for the application.
-
-    CUSTOMIZATION: Add new roles as needed. Each role should have a
-    corresponding entry in ROLE_PERMISSIONS defining its permissions.
-
-    Examples of roles you might add:
-    - MANAGER = "manager"
-    - MODERATOR = "moderator"
-    - VIEWER = "viewer"
-    """
+    """Role definitions for A2W platform."""
 
     ADMIN = "admin"
-    USER = "user"
-    # Add custom roles here:
-    # MANAGER = "manager"
-    # MODERATOR = "moderator"
+    ARETAN = "aretan"
+    CONTRATANTE = "contratante"
 
 
-# Role to permissions mapping
-# CUSTOMIZATION: Define which permissions each role has
+# Shared permissions for all authenticated users
+_BASE_PERMISSIONS: set[Permission] = {
+    Permission.PROFILE_READ,
+    Permission.PROFILE_UPDATE,
+    Permission.POSTS_READ,
+    Permission.POSTS_CREATE,
+    Permission.POSTS_UPDATE_OWN,
+    Permission.POSTS_DELETE_OWN,
+    Permission.COMMENTS_CREATE,
+    Permission.LIKES_CREATE,
+    Permission.DIRECTORY_ARETANS,
+    Permission.DIRECTORY_CONTRACTORS,
+    Permission.NOTIFICATIONS_READ,
+    Permission.MASTER_LISTS_READ,
+}
+
 ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
-    # Admin role - has all permissions
-    Role.ADMIN: {
-        Permission.USERS_READ,
-        Permission.USERS_CREATE,
-        Permission.USERS_UPDATE,
-        Permission.USERS_DELETE,
-        Permission.ITEMS_READ,
-        Permission.ITEMS_CREATE,
-        Permission.ITEMS_UPDATE,
-        Permission.ITEMS_DELETE,
-        Permission.ADMIN_ACCESS,
-        Permission.ADMIN_SETTINGS,
+    Role.ADMIN: {perm for perm in Permission},  # Admin has ALL permissions
+
+    Role.ARETAN: {
+        *_BASE_PERMISSIONS,
+        Permission.CONTACT_REQUEST_RESPOND,
     },
 
-    # Regular user role - limited permissions
-    Role.USER: {
-        Permission.ITEMS_READ,
-        Permission.ITEMS_CREATE,
-        Permission.ITEMS_UPDATE,
-        # Users can't delete items or access admin features
+    Role.CONTRATANTE: {
+        *_BASE_PERMISSIONS,
+        Permission.CONTACT_REQUEST_SEND,
     },
-
-    # Add permissions for custom roles:
-    # Role.MANAGER: {
-    #     Permission.USERS_READ,
-    #     Permission.ITEMS_READ,
-    #     Permission.ITEMS_CREATE,
-    #     Permission.ITEMS_UPDATE,
-    #     Permission.ITEMS_DELETE,
-    # },
 }
 
 

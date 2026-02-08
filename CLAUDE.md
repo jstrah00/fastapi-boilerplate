@@ -1,4 +1,4 @@
-# CLAUDE.md - FastAPI Boilerplate with PostgreSQL + MongoDB
+# CLAUDE.md - A2W Backend (FastAPI + PostgreSQL + MongoDB)
 
 ## Quick Start
 ```bash
@@ -62,7 +62,7 @@ Use skills with `/skill-name` format:
 - `/fastapi-test` - Generate test files
 - `/feature-from-plan` - Execute structured Claude.ai Project plan
 
-**IMPORTANT**: Always invoke relevant skill when creating features - they contain boilerplate-specific patterns.
+**IMPORTANT**: Always invoke relevant skill when creating features - they contain project-specific patterns.
 
 ---
 

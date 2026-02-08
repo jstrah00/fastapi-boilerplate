@@ -62,7 +62,7 @@ Example:
         user = await auth_service.validate_token(access_token)
         # Returns User model if valid, raises AuthenticationError if invalid
 """
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID
 
 from app.repositories.user_repo import UserRepository
@@ -75,10 +75,13 @@ from app.common.security import (
     verify_password,
     create_access_token,
     create_refresh_token,
+    create_password_reset_token,
     decode_token,
+    get_password_hash,
 )
 from app.common.logging import get_logger
-from app.common.exceptions import AuthenticationError, NotFoundError
+from app.common.exceptions import AuthenticationError, NotFoundError, ValidationError
+from app.config import settings
 
 logger = get_logger(__name__)
 
@@ -110,19 +113,7 @@ class AuthService:
         self.blacklist_repo = blacklist_repo
 
     async def login(self, credentials: LoginRequest) -> Token:
-        """
-        Login with email and password.
-
-        Args:
-            credentials: Login credentials (email + password)
-
-        Returns:
-            Access and refresh tokens
-
-        Raises:
-            AuthenticationError: If credentials are invalid
-        """
-        # Get user by email
+        """Login with email and password, with lockout after 5 failed attempts."""
         user = await self.user_repo.get_by_email(credentials.email)
 
         if not user:
@@ -132,8 +123,26 @@ class AuthService:
                 details={"email": credentials.email},
             )
 
+        # Check if account is locked
+        if user.is_locked:
+            logger.warning("login_failed", email=credentials.email, reason="account_locked")
+            raise AuthenticationError(
+                message="Account is temporarily locked. Try again later.",
+                details={"email": credentials.email},
+            )
+
         # Verify password
         if not verify_password(credentials.password, user.password_hash):
+            # Increment failed attempts
+            user.failed_login_attempts += 1
+            if user.failed_login_attempts >= 5:
+                from datetime import timedelta
+                user.locked_until = datetime.now(UTC) + timedelta(minutes=15)
+                logger.warning(
+                    "account_locked",
+                    email=credentials.email,
+                    attempts=user.failed_login_attempts,
+                )
             logger.warning("login_failed", email=credentials.email, reason="invalid_password")
             raise AuthenticationError(
                 message="Invalid email or password",
@@ -147,6 +156,10 @@ class AuthService:
                 message="User account is not active",
                 details={"email": credentials.email, "status": user.status},
             )
+
+        # Reset failed attempts on successful login
+        user.failed_login_attempts = 0
+        user.locked_until = None
 
         # Create tokens
         access_token = create_access_token(subject=str(user.id))
@@ -287,6 +300,92 @@ class AuthService:
             refresh_token=new_refresh_token,
             token_type="bearer",
         )
+
+    async def request_password_reset(self, email: str) -> str | None:
+        """
+        Generate a password reset token if the user exists.
+
+        Returns the reset URL for logging/email purposes. Returns None if
+        user not found (to prevent email enumeration).
+
+        Args:
+            email: User email address
+
+        Returns:
+            Reset URL string if user found, None otherwise
+        """
+        user = await self.user_repo.get_by_email(email)
+
+        if not user:
+            logger.info("password_reset_requested_unknown_email", email=email)
+            return None
+
+        token = create_password_reset_token(subject=str(user.id))
+        reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+
+        logger.info(
+            "password_reset_requested",
+            user_id=str(user.id),
+            email=email,
+            reset_url=reset_url,
+        )
+
+        return reset_url
+
+    async def reset_password(self, token: str, new_password: str) -> None:
+        """
+        Reset user password using a valid reset token.
+
+        Args:
+            token: Password reset JWT token
+            new_password: New password to set
+
+        Raises:
+            ValidationError: If token is invalid or expired
+            NotFoundError: If user from token not found
+        """
+        payload = decode_token(token)
+
+        if payload is None or payload.get("type") != "password_reset":
+            raise ValidationError(
+                message="Invalid or expired reset token",
+                details={},
+            )
+
+        user_id_str = payload.get("sub")
+        if not user_id_str:
+            raise ValidationError(
+                message="Invalid reset token",
+                details={},
+            )
+
+        try:
+            user_id = UUID(user_id_str)
+        except ValueError:
+            raise ValidationError(
+                message="Invalid reset token",
+                details={},
+            )
+
+        user = await self.user_repo.get(user_id)
+        if not user:
+            raise NotFoundError(
+                message="User not found",
+                details={"user_id": user_id_str},
+            )
+
+        # Update password
+        new_hash = get_password_hash(new_password)
+        await self.user_repo.update(user_id, {"password_hash": new_hash})
+
+        # Reset lockout on password reset
+        if user.failed_login_attempts > 0 or user.locked_until:
+            await self.user_repo.update(
+                user_id,
+                {"failed_login_attempts": 0, "locked_until": None},
+            )
+
+        logger.info("password_reset_success", user_id=user_id_str)
 
     async def validate_token(self, token: str) -> User:
         """

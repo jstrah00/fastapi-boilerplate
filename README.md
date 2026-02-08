@@ -1,12 +1,12 @@
 # Backend - FastAPI Service
 
-Production-ready FastAPI backend with PostgreSQL + MongoDB support, designed for rapid SaaS development. This is a **Git submodule** of the SaaS Boilerplate monorepo.
+FastAPI backend with PostgreSQL + MongoDB support. This is a **Git submodule** of the A2W monorepo.
 
 **For complete setup instructions, see**: `../docs/GETTING_STARTED.md` in the root directory.
 
 ## About This Module
 
-This backend service is designed to work as part of the SaaS Boilerplate monorepo but can also be used independently. It includes integrated Claude Code skills and workflow optimizations for AI-assisted development.
+This backend service is designed to work as part of the A2W monorepo but can also be used independently. It includes integrated Claude Code skills and workflow optimizations for AI-assisted development.
 
 ## Available Claude Code Skills
 
@@ -138,14 +138,14 @@ The API will be available at `http://localhost:8000`.
 
 ## Feature Development Workflow (Optional - For Claude Code Users)
 
-This boilerplate includes a two-stage workflow for implementing new features efficiently with Claude Code:
+This project includes a two-stage workflow for implementing new features efficiently with Claude Code:
 
 1. **Planning Stage** (Claude.ai Project): Define features with business context
 2. **Implementation Stage** (Claude Code): Execute with optimized, pattern-aware prompts
 
 **Benefits:**
 - Reduces Claude Code token usage (important for Pro plan limits)
-- Ensures features follow boilerplate conventions automatically
+- Ensures features follow project conventions automatically
 - Generates production-ready code faster
 - Maintains architectural consistency
 
@@ -284,7 +284,7 @@ All configuration is done via environment variables. See `.env.example` for all 
 
 ### Database Options
 
-This boilerplate supports both PostgreSQL and MongoDB. You can use:
+This project supports both PostgreSQL and MongoDB. You can use:
 
 1. **Both databases** (default): Use PostgreSQL for structured data and MongoDB for flexible documents
 2. **PostgreSQL only**: Remove MongoDB-related code (see comments in code)
@@ -397,4 +397,4 @@ docker run -e ENVIRONMENT=production your-app:latest
 
 ## License
 
-MIT License - feel free to use this boilerplate for any project.
+MIT License

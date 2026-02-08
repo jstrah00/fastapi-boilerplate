@@ -70,6 +70,12 @@ from app.repositories.refresh_token_blacklist_repository import (
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 from app.services.item_service import ItemService
+from app.services.registration_service import RegistrationService
+from app.repositories.master_list_repo import (
+    MasterIndustryRepository,
+    MasterProfessionRepository,
+    MasterSportAchievementRepository,
+)
 from app.models.postgres.user import User
 from app.common.security import decode_token
 from app.common.logging import get_logger
@@ -129,6 +135,35 @@ async def get_item_service(
 ) -> ItemService:
     """Get item service instance."""
     return ItemService(item_repo)
+
+
+async def get_master_industry_repository(
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> MasterIndustryRepository:
+    """Get master industry repository instance."""
+    return MasterIndustryRepository(db)
+
+
+async def get_master_profession_repository(
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> MasterProfessionRepository:
+    """Get master profession repository instance."""
+    return MasterProfessionRepository(db)
+
+
+async def get_master_achievement_repository(
+    db: Annotated[AsyncSession, Depends(get_db)]
+) -> MasterSportAchievementRepository:
+    """Get master sport achievement repository instance."""
+    return MasterSportAchievementRepository(db)
+
+
+async def get_registration_service(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
+) -> RegistrationService:
+    """Get registration service instance."""
+    return RegistrationService(db, user_repo)
 
 
 # =============================================================================
@@ -287,3 +322,9 @@ BlacklistRepo = Annotated[RefreshTokenBlacklistRepository, Depends(get_blacklist
 UserSvc = Annotated[UserService, Depends(get_user_service)]
 AuthSvc = Annotated[AuthService, Depends(get_auth_service)]
 ItemSvc = Annotated[ItemService, Depends(get_item_service)]
+RegistrationSvc = Annotated[RegistrationService, Depends(get_registration_service)]
+
+# Master List Repositories
+IndustryRepo = Annotated[MasterIndustryRepository, Depends(get_master_industry_repository)]
+ProfessionRepo = Annotated[MasterProfessionRepository, Depends(get_master_profession_repository)]
+AchievementRepo = Annotated[MasterSportAchievementRepository, Depends(get_master_achievement_repository)]

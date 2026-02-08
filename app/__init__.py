@@ -1,7 +1,7 @@
 """
-FastAPI Boilerplate Application Package.
+A2W Backend Application Package.
 
-A production-ready FastAPI boilerplate with PostgreSQL + MongoDB support,
+FastAPI backend with PostgreSQL + MongoDB support,
 JWT authentication, role-based access control, and layered architecture.
 
 Key components:

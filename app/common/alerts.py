@@ -41,7 +41,7 @@ Example:
 
     Alert format in Telegram::
 
-        ERROR - FastAPI Boilerplate
+        ERROR - A2W
 
         Payment processing failed
 

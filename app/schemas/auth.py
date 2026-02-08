@@ -77,3 +77,16 @@ class RefreshTokenRequest(BaseModel):
     """Schema for refresh token request."""
 
     refresh_token: str
+
+
+class PasswordResetRequest(BaseModel):
+    """Schema for requesting a password reset email."""
+
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    """Schema for confirming a password reset with new password."""
+
+    token: str
+    new_password: str

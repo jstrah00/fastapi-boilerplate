@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     # Application Settings
     # CONFIGURATION: Update these for your project
     # =========================================================================
-    APP_NAME: str = "FastAPI Boilerplate"
+    APP_NAME: str = "A2W"
     APP_VERSION: str = "1.0.0"
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
     DEBUG: bool = False
@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER_ME: int = 30  # For "remember me" feature
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # Frontend URL (for email links)
+    FRONTEND_URL: str = "http://localhost:5173"
 
     # =========================================================================
     # Cookie Settings (for httpOnly cookies)
@@ -143,11 +147,10 @@ class Settings(BaseSettings):
         )
 
     # =========================================================================
-    # MongoDB Settings
-    # NOTE: If not using MongoDB, see README for removal instructions
+    # MongoDB Settings (Optional - not used in A2W)
     # =========================================================================
-    MONGODB_URL: str
-    MONGODB_DB: str
+    MONGODB_URL: str | None = None
+    MONGODB_DB: str | None = None
     MONGODB_MIN_POOL_SIZE: int = 5
     MONGODB_MAX_POOL_SIZE: int = 50
 
