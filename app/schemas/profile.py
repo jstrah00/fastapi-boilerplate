@@ -150,6 +150,20 @@ class ContractorProfileUpdate(BaseModel):
 
 
 # =============================================================================
+# User Info Update (basic fields)
+# =============================================================================
+
+class UserInfoUpdate(BaseModel):
+    """Schema for updating basic user info."""
+
+    first_name: str | None = Field(None, min_length=1, max_length=100)
+    last_name: str | None = Field(None, min_length=1, max_length=100)
+    phone: str | None = Field(None, max_length=50)
+    contact_email: EmailStr | None = None
+    country: str | None = Field(None, max_length=100)
+
+
+# =============================================================================
 # Public Profile (combined user + profile data)
 # =============================================================================
 

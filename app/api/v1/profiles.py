@@ -17,6 +17,7 @@ from app.schemas.profile import (
     AretanProfileUpdate,
     ContractorProfileResponse,
     ContractorProfileUpdate,
+    UserInfoUpdate,
     WorkExperienceResponse,
     WorkExperienceCreate,
     WorkExperienceUpdate,
@@ -170,22 +171,18 @@ async def update_own_contractor_profile(
     summary="Update own user info",
 )
 async def update_own_user_info(
+    data: UserInfoUpdate,
     current_user: CurrentUser,
     profile_service: ProfileSvc,
-    first_name: str | None = None,
-    last_name: str | None = None,
-    phone: str | None = None,
-    contact_email: str | None = None,
-    country: str | None = None,
 ) -> UserResponse:
     """Update the current user's basic info (name, phone, contact email, country)."""
     user = await profile_service.update_user_info(
         current_user,
-        first_name=first_name,
-        last_name=last_name,
-        phone=phone,
-        contact_email=contact_email,
-        country=country,
+        first_name=data.first_name,
+        last_name=data.last_name,
+        phone=data.phone,
+        contact_email=data.contact_email,
+        country=data.country,
     )
     return UserResponse.model_validate(user)
 
