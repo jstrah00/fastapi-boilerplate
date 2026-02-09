@@ -39,6 +39,7 @@ from app.models.postgres.post import Post
 from app.models.postgres.comment import Comment
 from app.models.postgres.post_like import PostLike
 from app.models.postgres.notification import Notification
+from app.models.postgres.contact_request import ContactRequest
 
 __all__ = [
     "User",
@@ -48,4 +49,5 @@ __all__ = [
     "Comment",
     "PostLike",
     "Notification",
+    "ContactRequest",
 ]

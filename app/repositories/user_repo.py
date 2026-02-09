@@ -45,7 +45,7 @@ Example:
         await repo.create(new_user)
         await repo.update(user_id, {"status": "inactive"})
 """
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.postgres.user import User
@@ -126,3 +126,26 @@ class UserRepository(BaseRepository[User]):
         )
 
         return users
+
+    async def search_by_name(self, query: str, limit: int = 10) -> list[User]:
+        """
+        Search users by name for @mention autocomplete.
+
+        Args:
+            query: Search term to match against first_name and last_name
+            limit: Maximum number of results
+
+        Returns:
+            List of matching active users
+        """
+        search_term = f"%{query}%"
+        result = await self.db.execute(
+            select(User)
+            .where(
+                User.status == "active",
+                func.concat(User.first_name, " ", User.last_name).ilike(search_term),
+            )
+            .order_by(User.first_name, User.last_name)
+            .limit(limit)
+        )
+        return list(result.scalars().all())

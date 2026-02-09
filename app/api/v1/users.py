@@ -111,6 +111,26 @@ async def get_current_user_info(
 
 
 @router.get(
+    "/search",
+    response_model=list[UserResponse],
+    summary="Search users for mentions",
+    description="Search users by name for @mention autocomplete.",
+)
+async def search_users(
+    user_repo: UserRepo,
+    current_user: CurrentUser,
+    q: str = "",
+    limit: int = 10,
+) -> list[UserResponse]:
+    """Search users by name for @mention autocomplete."""
+    if not q or len(q) < 2:
+        return []
+
+    users = await user_repo.search_by_name(q, limit=limit)
+    return [UserResponse.model_validate(u) for u in users]
+
+
+@router.get(
     "/",
     response_model=UserListResponse,
     summary="List users",
