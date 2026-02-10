@@ -59,7 +59,7 @@ async def send_email(to_email: str, subject: str, template_name: str, **kwargs: 
         return
 
     try:
-        html_body = _render_template(template_name, **kwargs)
+        html_body = _render_template(template_name, subject=subject, **kwargs)
 
         import asyncio
         loop = asyncio.get_running_loop()
@@ -79,7 +79,6 @@ async def send_welcome_aretan(to_email: str, first_name: str) -> None:
         "Bienvenido/a a Athlete2Work",
         "welcome_aretan.html",
         first_name=first_name,
-        subject="Bienvenido/a a Athlete2Work",
     )
 
 
@@ -91,7 +90,6 @@ async def send_welcome_contractor(to_email: str, first_name: str) -> None:
         "welcome_contractor.html",
         first_name=first_name,
         platform_url=settings.FRONTEND_URL,
-        subject="Bienvenido/a a Athlete2Work",
     )
 
 
@@ -103,7 +101,6 @@ async def send_approval_approved(to_email: str, first_name: str) -> None:
         "approval_approved.html",
         first_name=first_name,
         platform_url=settings.FRONTEND_URL,
-        subject="Tu perfil ha sido aprobado - Athlete2Work",
     )
 
 
@@ -114,7 +111,6 @@ async def send_approval_rejected(to_email: str, first_name: str) -> None:
         "Actualización sobre tu perfil - Athlete2Work",
         "approval_rejected.html",
         first_name=first_name,
-        subject="Actualización sobre tu perfil - Athlete2Work",
     )
 
 
@@ -126,7 +122,6 @@ async def send_password_reset(to_email: str, first_name: str, reset_url: str) ->
         "password_reset.html",
         first_name=first_name,
         reset_url=reset_url,
-        subject="Restablecer contraseña - Athlete2Work",
     )
 
 
@@ -140,7 +135,6 @@ async def send_contact_request(to_email: str, first_name: str, requester_name: s
         requester_name=requester_name,
         message=message,
         platform_url=f"{settings.FRONTEND_URL}/contact-requests",
-        subject="Nueva solicitud de contacto - Athlete2Work",
     )
 
 
@@ -155,5 +149,4 @@ async def send_contact_accepted(to_email: str, first_name: str, aretan_name: str
         contact_email=contact_email,
         phone=phone,
         platform_url=f"{settings.FRONTEND_URL}/contact-requests",
-        subject="Solicitud de contacto aceptada - Athlete2Work",
     )
