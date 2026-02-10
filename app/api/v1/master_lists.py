@@ -54,7 +54,7 @@ async def create_industry(
     existing = await repo.get_by_name(data.name)
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="Industry already exists")
-    item = MasterIndustry(name=data.name, display_order=data.display_order)
+    item = MasterIndustry(name=data.name, name_en=data.name_en, display_order=data.display_order)
     created = await repo.create(item)
     return MasterListItemResponse.model_validate(created)
 
@@ -99,7 +99,7 @@ async def create_profession(
     existing = await repo.get_by_name(data.name)
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, detail="Profession already exists")
-    item = MasterProfession(name=data.name, display_order=data.display_order)
+    item = MasterProfession(name=data.name, name_en=data.name_en, display_order=data.display_order)
     created = await repo.create(item)
     return MasterListItemResponse.model_validate(created)
 
@@ -148,7 +148,7 @@ async def create_sport_achievement(
         raise HTTPException(
             status.HTTP_409_CONFLICT, detail="Sport achievement already exists"
         )
-    item = MasterSportAchievement(name=data.name, display_order=data.display_order)
+    item = MasterSportAchievement(name=data.name, name_en=data.name_en, display_order=data.display_order)
     created = await repo.create(item)
     return MasterListItemResponse.model_validate(created)
 

@@ -140,6 +140,7 @@ class MasterListItemCreate(BaseModel):
     """Schema for creating a master list entry (admin)."""
 
     name: str = Field(min_length=1, max_length=200)
+    name_en: str | None = Field(None, max_length=200)
     display_order: int = 0
 
 
@@ -147,6 +148,7 @@ class MasterListItemUpdate(BaseModel):
     """Schema for updating a master list entry (admin)."""
 
     name: str | None = Field(None, min_length=1, max_length=200)
+    name_en: str | None = Field(None, max_length=200)
     is_active: bool | None = None
     display_order: int | None = None
 
@@ -158,5 +160,6 @@ class MasterListItemResponse(BaseModel):
 
     id: UUID
     name: str
+    name_en: str | None = None
     is_active: bool
     display_order: int
