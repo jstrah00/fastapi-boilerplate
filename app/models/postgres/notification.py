@@ -6,7 +6,7 @@ Tracks likes, comments, and mentions so users see activity on their content.
 from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, DateTime, Boolean, ForeignKey
+from sqlalchemy import String, DateTime, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.postgres import Base
@@ -33,6 +33,7 @@ class Notification(Base):
     comment_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("comments.id", ondelete="CASCADE"), nullable=True
     )
+    extra_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     created_at: Mapped[datetime] = mapped_column(

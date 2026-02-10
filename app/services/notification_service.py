@@ -38,6 +38,7 @@ class NotificationService:
                         role=n.actor.role,
                     ),
                     post_id=n.post_id,
+                    extra_data=n.extra_data,
                     is_read=n.is_read,
                     created_at=n.created_at,
                 )
@@ -61,6 +62,7 @@ class NotificationService:
         notification_type: str,
         post_id: UUID | None = None,
         comment_id: UUID | None = None,
+        extra_data: dict | None = None,
     ) -> None:
         """Create a notification. Skips if user == actor (no self-notifications)."""
         if user_id == actor_id:
@@ -72,6 +74,7 @@ class NotificationService:
             type=notification_type,
             post_id=post_id,
             comment_id=comment_id,
+            extra_data=extra_data,
         )
         await self.notification_repo.create(notification)
         logger.info(

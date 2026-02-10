@@ -106,10 +106,20 @@ class ContactRequestService:
         notification_type = (
             "contact_accepted" if data.status == "accepted" else "contact_rejected"
         )
+        # Include contact info when accepted
+        extra_data = None
+        if data.status == "accepted":
+            extra_data = {}
+            if user.contact_email:
+                extra_data["email"] = user.contact_email
+            if user.phone:
+                extra_data["phone"] = user.phone
+
         await self.notification_service.create_notification(
             user_id=request.requester_id,
             actor_id=user.id,
             notification_type=notification_type,
+            extra_data=extra_data or None,
         )
 
         logger.info(

@@ -18,6 +18,7 @@ class NotificationResponse(BaseModel):
     type: str
     actor: PostAuthor
     post_id: UUID | None = None
+    extra_data: dict | None = None
     is_read: bool
     created_at: datetime
 
