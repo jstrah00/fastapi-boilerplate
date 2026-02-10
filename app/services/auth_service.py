@@ -301,18 +301,18 @@ class AuthService:
             token_type="bearer",
         )
 
-    async def request_password_reset(self, email: str) -> str | None:
+    async def request_password_reset(self, email: str) -> tuple[str, str] | None:
         """
         Generate a password reset token if the user exists.
 
-        Returns the reset URL for logging/email purposes. Returns None if
+        Returns (reset_url, first_name) for email sending. Returns None if
         user not found (to prevent email enumeration).
 
         Args:
             email: User email address
 
         Returns:
-            Reset URL string if user found, None otherwise
+            Tuple of (reset_url, first_name) if user found, None otherwise
         """
         user = await self.user_repo.get_by_email(email)
 
@@ -330,7 +330,7 @@ class AuthService:
             reset_url=reset_url,
         )
 
-        return reset_url
+        return reset_url, user.first_name
 
     async def reset_password(self, token: str, new_password: str) -> None:
         """

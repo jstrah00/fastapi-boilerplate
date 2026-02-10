@@ -19,6 +19,7 @@ from app.schemas.contact_request import (
 from app.schemas.post import PostAuthor
 from app.common.exceptions import NotFoundError, ValidationError, AlreadyExistsError
 from app.common.logging import get_logger
+from app.services import email_service
 
 logger = get_logger(__name__)
 
@@ -81,6 +82,14 @@ class ContactRequestService:
             target=str(data.target_id),
         )
 
+        # Email the aretan about the new contact request
+        await email_service.send_contact_request(
+            to_email=target.email,
+            first_name=target.first_name,
+            requester_name=f"{requester.first_name} {requester.last_name}",
+            message=data.message,
+        )
+
         return self._to_response(request)
 
     async def update_request(
@@ -127,6 +136,18 @@ class ContactRequestService:
             request_id=str(request_id),
             status=data.status,
         )
+
+        # Email the contractor when their request is accepted
+        if data.status == "accepted":
+            requester = await self.user_repo.get(request.requester_id)
+            if requester:
+                await email_service.send_contact_accepted(
+                    to_email=requester.email,
+                    first_name=requester.first_name,
+                    aretan_name=f"{user.first_name} {user.last_name}",
+                    contact_email=user.contact_email,
+                    phone=user.phone,
+                )
 
         return self._to_response(request)
 

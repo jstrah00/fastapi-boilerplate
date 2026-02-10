@@ -17,6 +17,7 @@ from app.schemas.registration import AretanRegistration, ContractorRegistration
 from app.common.security import get_password_hash
 from app.common.logging import get_logger
 from app.common.exceptions import AlreadyExistsError
+from app.services import email_service
 
 logger = get_logger(__name__)
 
@@ -95,6 +96,8 @@ class RegistrationService:
             status="pending",
         )
 
+        await email_service.send_welcome_aretan(user.email, user.first_name)
+
         return user
 
     async def register_contractor(self, data: ContractorRegistration) -> User:
@@ -143,5 +146,7 @@ class RegistrationService:
             email=user.email,
             status="active",
         )
+
+        await email_service.send_welcome_contractor(user.email, user.first_name)
 
         return user

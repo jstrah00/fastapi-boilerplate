@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Solicitud de contacto aceptada</h2>
+<p>Hola {{ first_name }},</p>
+<p><strong>{{ aretan_name }}</strong> ha aceptado tu solicitud de contacto y ha compartido su informacion:</p>
+<div style="background-color: #f4f4f4; padding: 16px; border-radius: 4px; margin: 16px 0;">
+  {% if contact_email %}
+  <p style="margin: 4px 0;">Email: <a href="mailto:{{ contact_email }}" style="color: #BE5103;">{{ contact_email }}</a></p>
+  {% endif %}
+  {% if phone %}
+  <p style="margin: 4px 0;">Telefono: <a href="tel:{{ phone }}" style="color: #BE5103;">{{ phone }}</a></p>
+  {% endif %}
+</div>
+<a href="{{ platform_url }}" class="btn">Ver solicitudes</a>
+{% endblock %}

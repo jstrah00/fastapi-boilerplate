@@ -73,6 +73,7 @@ from app.common.exceptions import (
     ValidationError,
 )
 from app.common.permissions import Permission, has_permission
+from app.services import email_service
 
 logger = get_logger(__name__)
 
@@ -429,7 +430,10 @@ class UserService:
             performed_by=str(current_user.id),
         )
 
-        # TODO: Send approval/rejection email using templates
+        if new_status == "active":
+            await email_service.send_approval_approved(updated_user.email, updated_user.first_name)
+        else:
+            await email_service.send_approval_rejected(updated_user.email, updated_user.first_name)
 
         return updated_user
 

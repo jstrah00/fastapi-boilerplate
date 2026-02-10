@@ -69,6 +69,7 @@ from app.api.deps import get_auth_service, CurrentUser
 from app.common.logging import get_logger
 from app.common.exceptions import AuthenticationError, ValidationError, NotFoundError
 from app.config import Settings, settings as global_settings
+from app.services import email_service
 
 # Type alias for settings dependency
 def get_settings() -> Settings:
@@ -286,11 +287,12 @@ async def forgot_password(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> dict[str, str]:
     """Request a password reset link."""
-    reset_url = await auth_service.request_password_reset(body.email)
+    result = await auth_service.request_password_reset(body.email)
 
-    if reset_url:
-        # TODO: Send email with reset_url using email template password_reset.html
-        logger.info("password_reset_email_sent", email=body.email, reset_url=reset_url)
+    if result:
+        reset_url, first_name = result
+        await email_service.send_password_reset(body.email, first_name, reset_url)
+        logger.info("password_reset_email_sent", email=body.email)
 
     # Always return success to prevent email enumeration
     return {"message": "If the email exists, a reset link has been sent"}

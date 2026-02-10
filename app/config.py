@@ -155,6 +155,16 @@ class Settings(BaseSettings):
     MONGODB_MAX_POOL_SIZE: int = 50
 
     # =========================================================================
+    # SMTP Email Settings
+    # =========================================================================
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 465
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_FROM_NAME: str = "A2W Team"
+    SMTP_ENABLED: bool = False
+
+    # =========================================================================
     # Telegram Alerts (Optional)
     # NOTE: If not using alerts, see app/core/alerts.py for removal instructions
     # =========================================================================

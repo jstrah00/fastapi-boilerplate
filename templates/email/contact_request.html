@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Nueva solicitud de contacto</h2>
+<p>Hola {{ first_name }},</p>
+<p><strong>{{ requester_name }}</strong> desea conectar contigo y ha enviado una solicitud de contacto.</p>
+{% if message %}
+<div style="background-color: #f4f4f4; padding: 12px 16px; border-left: 4px solid #012657; margin: 16px 0; border-radius: 4px;">
+  <p style="margin: 0; font-style: italic;">"{{ message }}"</p>
+</div>
+{% endif %}
+<p>Puedes aceptar o rechazar esta solicitud desde la plataforma.</p>
+<a href="{{ platform_url }}" class="btn">Ver solicitud</a>
+{% endblock %}
