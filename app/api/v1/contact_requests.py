@@ -80,6 +80,21 @@ async def get_received_requests(
     return await service.get_received_requests(current_user, skip, limit)
 
 
+@router.get(
+    "/sent",
+    response_model=ContactRequestListResponse,
+    summary="Get sent requests",
+)
+async def get_sent_requests(
+    service: ContactRequestSvc,
+    current_user: CurrentUser,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+) -> ContactRequestListResponse:
+    """Get contact requests sent by current user."""
+    return await service.get_sent_requests(current_user, skip, limit)
+
+
 @router.patch(
     "/{request_id}",
     response_model=ContactRequestResponse,

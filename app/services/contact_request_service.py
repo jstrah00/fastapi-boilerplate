@@ -144,8 +144,29 @@ class ContactRequestService:
             total=total,
         )
 
+    async def get_sent_requests(
+        self, user: User, skip: int = 0, limit: int = 20
+    ) -> ContactRequestListResponse:
+        """Get requests sent by current user."""
+        requests = await self.request_repo.get_sent_requests(
+            user.id, skip, limit
+        )
+        total = await self.request_repo.count_sent(user.id)
+
+        return ContactRequestListResponse(
+            requests=[self._to_response(r) for r in requests],
+            total=total,
+        )
+
     def _to_response(self, request: ContactRequest) -> ContactRequestResponse:
         """Convert model to response schema."""
+        # Include target's contact info when request is accepted
+        contact_email = None
+        phone = None
+        if request.status == "accepted":
+            contact_email = request.target.contact_email
+            phone = request.target.phone
+
         return ContactRequestResponse(
             id=request.id,
             requester=PostAuthor(
@@ -164,6 +185,8 @@ class ContactRequestService:
             ),
             status=request.status,
             message=request.message,
+            contact_email=contact_email,
+            phone=phone,
             created_at=request.created_at,
             updated_at=request.updated_at,
         )

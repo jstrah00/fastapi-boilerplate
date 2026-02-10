@@ -56,3 +56,27 @@ class ContactRequestRepository(BaseRepository[ContactRequest]):
             .where(ContactRequest.target_id == user_id)
         )
         return result.scalar() or 0
+
+    async def get_sent_requests(
+        self, user_id: UUID, skip: int = 0, limit: int = 20
+    ) -> list[ContactRequest]:
+        """Get requests sent by a user (where user is requester)."""
+        result = await self.db.execute(
+            select(ContactRequest)
+            .where(ContactRequest.requester_id == user_id)
+            .order_by(ContactRequest.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def count_sent(self, user_id: UUID) -> int:
+        """Count sent requests."""
+        from sqlalchemy import func
+
+        result = await self.db.execute(
+            select(func.count())
+            .select_from(ContactRequest)
+            .where(ContactRequest.requester_id == user_id)
+        )
+        return result.scalar() or 0

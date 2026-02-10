@@ -33,6 +33,8 @@ class ContactRequestResponse(BaseModel):
     target: PostAuthor
     status: str
     message: str | None
+    contact_email: str | None = None
+    phone: str | None = None
     created_at: datetime
     updated_at: datetime
 
