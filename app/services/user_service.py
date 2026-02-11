@@ -445,10 +445,14 @@ class UserService:
             performed_by=str(current_user.id),
         )
 
-        if new_status == "active":
-            await email_service.send_approval_approved(updated_user.email, updated_user.first_name)
-        else:
-            await email_service.send_approval_rejected(updated_user.email, updated_user.first_name)
+        # Send email notification (non-blocking)
+        try:
+            if new_status == "active":
+                await email_service.send_approval_approved(updated_user.email, updated_user.first_name)
+            else:
+                await email_service.send_approval_rejected(updated_user.email, updated_user.first_name)
+        except Exception as e:
+            logger.warning("email_send_failed", error=str(e), type="approval")
 
         return updated_user
 
