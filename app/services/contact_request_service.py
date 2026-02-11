@@ -82,13 +82,16 @@ class ContactRequestService:
             target=str(data.target_id),
         )
 
-        # Email the aretan about the new contact request
-        await email_service.send_contact_request(
-            to_email=target.email,
-            first_name=target.first_name,
-            requester_name=f"{requester.first_name} {requester.last_name}",
-            message=data.message,
-        )
+        # Email the aretan about the new contact request (non-blocking)
+        try:
+            await email_service.send_contact_request(
+                to_email=target.email,
+                first_name=target.first_name,
+                requester_name=f"{requester.first_name} {requester.last_name}",
+                message=data.message,
+            )
+        except Exception as e:
+            logger.warning("email_send_failed", error=str(e), type="contact_request")
 
         return self._to_response(request)
 
@@ -137,17 +140,20 @@ class ContactRequestService:
             status=data.status,
         )
 
-        # Email the contractor when their request is accepted
+        # Email the contractor when their request is accepted (non-blocking)
         if data.status == "accepted":
             requester = await self.user_repo.get(request.requester_id)
             if requester:
-                await email_service.send_contact_accepted(
-                    to_email=requester.email,
-                    first_name=requester.first_name,
-                    aretan_name=f"{user.first_name} {user.last_name}",
-                    contact_email=user.email,
-                    phone=user.phone,
-                )
+                try:
+                    await email_service.send_contact_accepted(
+                        to_email=requester.email,
+                        first_name=requester.first_name,
+                        aretan_name=f"{user.first_name} {user.last_name}",
+                        contact_email=user.email,
+                        phone=user.phone,
+                    )
+                except Exception as e:
+                    logger.warning("email_send_failed", error=str(e), type="contact_accepted")
 
         return self._to_response(request)
 

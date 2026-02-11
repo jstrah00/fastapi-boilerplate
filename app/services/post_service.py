@@ -168,13 +168,16 @@ class PostService:
                 notification_type="like",
                 post_id=post_id,
             )
-            # Send email notification if recipient has it enabled
+            # Send email notification if recipient has it enabled (non-blocking)
             if post.author_id != user.id:
                 post_author = await self.user_repo.get(post.author_id)
                 if post_author and post_author.email_notifications_enabled:
-                    await email_service.send_notification_like(
-                        post_author.email, post_author.first_name, user.full_name
-                    )
+                    try:
+                        await email_service.send_notification_like(
+                            post_author.email, post_author.first_name, user.full_name
+                        )
+                    except Exception as e:
+                        logger.warning("email_notification_failed", error=str(e), type="like")
             return LikeToggleResponse(liked=True, likes_count=new_count)
 
     async def get_likers(
@@ -245,13 +248,16 @@ class PostService:
             comment_id=comment.id,
         )
 
-        # Send email notification if recipient has it enabled
+        # Send email notification if recipient has it enabled (non-blocking)
         if post.author_id != user.id:
             post_author = await self.user_repo.get(post.author_id)
             if post_author and post_author.email_notifications_enabled:
-                await email_service.send_notification_comment(
-                    post_author.email, post_author.first_name, user.full_name
-                )
+                try:
+                    await email_service.send_notification_comment(
+                        post_author.email, post_author.first_name, user.full_name
+                    )
+                except Exception as e:
+                    logger.warning("email_notification_failed", error=str(e), type="comment")
 
         return CommentResponse(
             id=comment.id,
