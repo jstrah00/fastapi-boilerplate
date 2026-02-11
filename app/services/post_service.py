@@ -1,6 +1,7 @@
 """
 Post service handling feed, comments, likes, and @mention parsing.
 """
+import asyncio
 import re
 from uuid import UUID
 
@@ -162,22 +163,10 @@ class PostService:
             await self.like_repo.create(like)
             new_count = post.likes_count + 1
             await self.post_repo.update(post_id, {"likes_count": new_count})
-            await self.notification_service.create_notification(
-                user_id=post.author_id,
-                actor_id=user.id,
-                notification_type="like",
-                post_id=post_id,
-            )
-            # Send email notification if recipient has it enabled (non-blocking)
-            if post.author_id != user.id:
-                post_author = await self.user_repo.get(post.author_id)
-                if post_author and post_author.email_notifications_enabled:
-                    try:
-                        await email_service.send_notification_like(
-                            post_author.email, post_author.first_name, user.full_name
-                        )
-                    except Exception as e:
-                        logger.warning("email_notification_failed", error=str(e), type="like")
+
+            # Fire notification and email in background (don't wait)
+            asyncio.create_task(self._send_like_notification(post, user))
+
             return LikeToggleResponse(liked=True, likes_count=new_count)
 
     async def get_likers(
@@ -239,25 +228,8 @@ class PostService:
             post_id, {"comments_count": post.comments_count + 1}
         )
 
-        # Notify post author
-        await self.notification_service.create_notification(
-            user_id=post.author_id,
-            actor_id=user.id,
-            notification_type="comment",
-            post_id=post_id,
-            comment_id=comment.id,
-        )
-
-        # Send email notification if recipient has it enabled (non-blocking)
-        if post.author_id != user.id:
-            post_author = await self.user_repo.get(post.author_id)
-            if post_author and post_author.email_notifications_enabled:
-                try:
-                    await email_service.send_notification_comment(
-                        post_author.email, post_author.first_name, user.full_name
-                    )
-                except Exception as e:
-                    logger.warning("email_notification_failed", error=str(e), type="comment")
+        # Fire notification and email in background (don't wait)
+        asyncio.create_task(self._send_comment_notification(post, user, comment.id))
 
         return CommentResponse(
             id=comment.id,
@@ -289,6 +261,55 @@ class PostService:
     # --------------------------------------------------------------------- #
     # Helpers
     # --------------------------------------------------------------------- #
+
+    async def _send_like_notification(self, post: Post, user: User) -> None:
+        """Send notification and email for a like (background task)."""
+        try:
+            # Create notification
+            await self.notification_service.create_notification(
+                user_id=post.author_id,
+                actor_id=user.id,
+                notification_type="like",
+                post_id=post.id,
+            )
+
+            # Send email if enabled and not self-like
+            if post.author_id != user.id:
+                post_author = await self.user_repo.get(post.author_id)
+                if post_author and post_author.email_notifications_enabled:
+                    try:
+                        await email_service.send_notification_like(
+                            post_author.email, post_author.first_name, user.full_name
+                        )
+                    except Exception as e:
+                        logger.warning("email_notification_failed", error=str(e), type="like")
+        except Exception as e:
+            logger.error("background_notification_failed", error=str(e), type="like")
+
+    async def _send_comment_notification(self, post: Post, user: User, comment_id: UUID) -> None:
+        """Send notification and email for a comment (background task)."""
+        try:
+            # Create notification
+            await self.notification_service.create_notification(
+                user_id=post.author_id,
+                actor_id=user.id,
+                notification_type="comment",
+                post_id=post.id,
+                comment_id=comment_id,
+            )
+
+            # Send email if enabled and not self-comment
+            if post.author_id != user.id:
+                post_author = await self.user_repo.get(post.author_id)
+                if post_author and post_author.email_notifications_enabled:
+                    try:
+                        await email_service.send_notification_comment(
+                            post_author.email, post_author.first_name, user.full_name
+                        )
+                    except Exception as e:
+                        logger.warning("email_notification_failed", error=str(e), type="comment")
+        except Exception as e:
+            logger.error("background_notification_failed", error=str(e), type="comment")
 
     async def toggle_post_visibility(self, post_id: UUID) -> None:
         """Toggle is_hidden on a post (admin moderation)."""
