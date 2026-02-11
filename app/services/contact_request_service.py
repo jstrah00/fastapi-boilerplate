@@ -119,8 +119,8 @@ class ContactRequestService:
         extra_data = None
         if data.status == "accepted":
             extra_data = {}
-            if user.contact_email:
-                extra_data["email"] = user.contact_email
+            if user.email:
+                extra_data["email"] = user.email
             if user.phone:
                 extra_data["phone"] = user.phone
 
@@ -145,7 +145,7 @@ class ContactRequestService:
                     to_email=requester.email,
                     first_name=requester.first_name,
                     aretan_name=f"{user.first_name} {user.last_name}",
-                    contact_email=user.contact_email,
+                    contact_email=user.email,
                     phone=user.phone,
                 )
 
@@ -185,7 +185,7 @@ class ContactRequestService:
         contact_email = None
         phone = None
         if request.status == "accepted":
-            contact_email = request.target.contact_email
+            contact_email = request.target.email
             phone = request.target.phone
 
         return ContactRequestResponse(

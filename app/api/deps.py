@@ -116,10 +116,11 @@ async def get_blacklist_repository(
 # =============================================================================
 
 async def get_user_service(
-    user_repo: Annotated[UserRepository, Depends(get_user_repository)]
+    user_repo: Annotated[UserRepository, Depends(get_user_repository)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> UserService:
     """Get user service instance."""
-    return UserService(user_repo)
+    return UserService(user_repo, db)
 
 
 async def get_auth_service(

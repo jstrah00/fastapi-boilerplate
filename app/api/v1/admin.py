@@ -44,6 +44,9 @@ async def get_platform_stats(
 
     # Contact request counts
     pending_contacts = await contact_repo.count(filters={"status": "pending"})
+    total_contacts = await contact_repo.count()
+    accepted_contacts = await contact_repo.count(filters={"status": "accepted"})
+    approval_pct = round((accepted_contacts / total_contacts * 100), 1) if total_contacts > 0 else 0.0
 
     return {
         "users": {
@@ -59,5 +62,8 @@ async def get_platform_stats(
         },
         "contact_requests": {
             "pending": pending_contacts,
+            "total": total_contacts,
+            "accepted": accepted_contacts,
+            "approval_percentage": approval_pct,
         },
     }

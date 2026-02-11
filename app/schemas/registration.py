@@ -52,12 +52,11 @@ class AretanRegistration(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str = Field(min_length=1, max_length=50)
-    contact_email: EmailStr
     country: str = Field(min_length=1, max_length=100)
 
     # Profile fields (required)
-    industry_id: UUID
-    profession_id: UUID
+    industry_ids: list[UUID] = Field(min_length=1)
+    profession_ids: list[UUID] = Field(min_length=1)
     max_achievement_id: UUID
     sport_description: str = Field(min_length=1)
     languages: list[str] = Field(min_length=1)
@@ -101,7 +100,6 @@ class ContractorRegistration(BaseModel):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     phone: str = Field(min_length=1, max_length=50)
-    contact_email: EmailStr
     country: str | None = None
 
     # Profile fields (required)

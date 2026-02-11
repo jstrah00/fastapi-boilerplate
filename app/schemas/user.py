@@ -78,9 +78,9 @@ class UserResponse(UserBase):
     role: str
     avatar_url: str | None = None
     phone: str | None = None
-    contact_email: str | None = None
     country: str | None = None
     custom_permissions: list[str] | None = None
+    email_notifications_enabled: bool = True
     is_admin: bool
     created_at: datetime
     updated_at: datetime

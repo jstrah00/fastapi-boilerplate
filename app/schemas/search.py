@@ -23,8 +23,8 @@ class AretanSearchResult(BaseModel):
     last_name: str
     avatar_url: str | None = None
     country: str | None = None
-    profession_name: str | None = None
-    industry_name: str | None = None
+    profession_names: list[str] = []
+    industry_names: list[str] = []
     max_achievement_name: str | None = None
     employment_status: str | None = None
     languages: list[str] | None = None

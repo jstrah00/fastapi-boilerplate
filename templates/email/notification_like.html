@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Nueva interaccion en tu publicacion</h2>
+<p>Hola {{ first_name }},</p>
+<p>A <strong>{{ liker_name }}</strong> le gusto tu publicacion en Athlete2Work.</p>
+<p>Ingresa a la plataforma para ver tu publicacion.</p>
+<a href="{{ platform_url }}" class="btn">Ver publicacion</a>
+<p style="font-size: 12px; color: #888; margin-top: 24px;">
+  Puedes desactivar las notificaciones por email desde la configuracion de tu perfil.
+</p>
+{% endblock %}

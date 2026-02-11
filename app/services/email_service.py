@@ -150,3 +150,27 @@ async def send_contact_accepted(to_email: str, first_name: str, aretan_name: str
         phone=phone,
         platform_url=f"{settings.FRONTEND_URL}/contact-requests",
     )
+
+
+async def send_notification_like(to_email: str, first_name: str, liker_name: str) -> None:
+    """Send email when someone likes a user's post."""
+    await send_email(
+        to_email,
+        "Alguien le dio Me Gusta a tu publicación - Athlete2Work",
+        "notification_like.html",
+        first_name=first_name,
+        liker_name=liker_name,
+        platform_url=settings.FRONTEND_URL,
+    )
+
+
+async def send_notification_comment(to_email: str, first_name: str, commenter_name: str) -> None:
+    """Send email when someone comments on a user's post."""
+    await send_email(
+        to_email,
+        "Nuevo comentario en tu publicación - Athlete2Work",
+        "notification_comment.html",
+        first_name=first_name,
+        commenter_name=commenter_name,
+        platform_url=settings.FRONTEND_URL,
+    )

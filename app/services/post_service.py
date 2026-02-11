@@ -13,6 +13,7 @@ from app.repositories.comment_repo import CommentRepository
 from app.repositories.post_like_repo import PostLikeRepository
 from app.repositories.user_repo import UserRepository
 from app.services.notification_service import NotificationService
+from app.services import email_service
 from app.schemas.post import (
     PostCreate,
     PostUpdate,
@@ -167,6 +168,13 @@ class PostService:
                 notification_type="like",
                 post_id=post_id,
             )
+            # Send email notification if recipient has it enabled
+            if post.author_id != user.id:
+                post_author = await self.user_repo.get(post.author_id)
+                if post_author and post_author.email_notifications_enabled:
+                    await email_service.send_notification_like(
+                        post_author.email, post_author.first_name, user.full_name
+                    )
             return LikeToggleResponse(liked=True, likes_count=new_count)
 
     async def get_likers(
@@ -237,6 +245,14 @@ class PostService:
             comment_id=comment.id,
         )
 
+        # Send email notification if recipient has it enabled
+        if post.author_id != user.id:
+            post_author = await self.user_repo.get(post.author_id)
+            if post_author and post_author.email_notifications_enabled:
+                await email_service.send_notification_comment(
+                    post_author.email, post_author.first_name, user.full_name
+                )
+
         return CommentResponse(
             id=comment.id,
             post_id=comment.post_id,
@@ -267,6 +283,22 @@ class PostService:
     # --------------------------------------------------------------------- #
     # Helpers
     # --------------------------------------------------------------------- #
+
+    async def toggle_post_visibility(self, post_id: UUID) -> None:
+        """Toggle is_hidden on a post (admin moderation)."""
+        post = await self.post_repo.get(post_id)
+        if not post:
+            raise NotFoundError(message="Post not found")
+        await self.post_repo.update(post_id, {"is_hidden": not post.is_hidden})
+        logger.info("post_visibility_toggled", post_id=str(post_id), hidden=not post.is_hidden)
+
+    async def toggle_comment_visibility(self, comment_id: UUID) -> None:
+        """Toggle is_hidden on a comment (admin moderation)."""
+        comment = await self.comment_repo.get(comment_id)
+        if not comment:
+            raise NotFoundError(message="Comment not found")
+        await self.comment_repo.update(comment_id, {"is_hidden": not comment.is_hidden})
+        logger.info("comment_visibility_toggled", comment_id=str(comment_id), hidden=not comment.is_hidden)
 
     async def _get_post_or_404(self, post_id: UUID) -> Post:
         """Fetch post or raise NotFoundError."""

@@ -75,10 +75,14 @@ class AretanProfileResponse(BaseModel):
     id: UUID
     user_id: UUID
 
-    # Master list references
-    industry: MasterListRef | None = None
-    profession: MasterListRef | None = None
+    # Master list references (multi-select)
+    industries: list[MasterListRef] = []
+    professions: list[MasterListRef] = []
     max_achievement: MasterListRef | None = None
+
+    # Raw IDs for edit forms
+    industry_ids: list[UUID] | None = None
+    profession_ids: list[UUID] | None = None
 
     # Text fields
     sport_description: str | None = None
@@ -101,8 +105,8 @@ class AretanProfileResponse(BaseModel):
 class AretanProfileUpdate(BaseModel):
     """Schema for updating an Aretan profile."""
 
-    industry_id: UUID | None = None
-    profession_id: UUID | None = None
+    industry_ids: list[UUID] | None = None
+    profession_ids: list[UUID] | None = None
     max_achievement_id: UUID | None = None
     sport_description: str | None = None
     professional_description: str | None = None
@@ -159,8 +163,8 @@ class UserInfoUpdate(BaseModel):
     first_name: str | None = Field(None, min_length=1, max_length=100)
     last_name: str | None = Field(None, min_length=1, max_length=100)
     phone: str | None = Field(None, max_length=50)
-    contact_email: EmailStr | None = None
     country: str | None = Field(None, max_length=100)
+    email_notifications_enabled: bool | None = None
 
 
 # =============================================================================
@@ -182,7 +186,7 @@ class PublicUserInfo(BaseModel):
 
     # Contact info (conditional on visibility)
     phone: str | None = None
-    contact_email: str | None = None
+    email: str | None = None
 
 
 class AretanPublicProfile(BaseModel):

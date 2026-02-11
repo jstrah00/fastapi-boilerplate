@@ -15,7 +15,6 @@ from app.models.postgres.aretan_profile import AretanProfile
 from app.models.postgres.contractor_profile import ContractorProfile
 from app.models.postgres.master_tables import (
     MasterIndustry,
-    MasterProfession,
     MasterSportAchievement,
 )
 from app.common.logging import get_logger
@@ -57,9 +56,9 @@ class SearchRepository:
         if country:
             base_conditions.append(User.country.ilike(f"%{country}%"))
         if industry_id:
-            base_conditions.append(AretanProfile.industry_id == industry_id)
+            base_conditions.append(AretanProfile.industry_ids.overlap([industry_id]))
         if profession_id:
-            base_conditions.append(AretanProfile.profession_id == profession_id)
+            base_conditions.append(AretanProfile.profession_ids.overlap([profession_id]))
         if max_achievement_id:
             base_conditions.append(AretanProfile.max_achievement_id == max_achievement_id)
         if employment_status:
@@ -88,13 +87,11 @@ class SearchRepository:
                 AretanProfile.languages,
                 AretanProfile.sport_description,
                 AretanProfile.professional_description,
-                MasterIndustry.name.label("industry_name"),
-                MasterProfession.name.label("profession_name"),
+                AretanProfile.industry_ids,
+                AretanProfile.profession_ids,
                 MasterSportAchievement.name.label("max_achievement_name"),
             )
             .join(AretanProfile, User.id == AretanProfile.user_id)
-            .outerjoin(MasterIndustry, AretanProfile.industry_id == MasterIndustry.id)
-            .outerjoin(MasterProfession, AretanProfile.profession_id == MasterProfession.id)
             .outerjoin(
                 MasterSportAchievement,
                 AretanProfile.max_achievement_id == MasterSportAchievement.id,

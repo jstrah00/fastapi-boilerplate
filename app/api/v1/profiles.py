@@ -112,6 +112,7 @@ async def get_public_profile(
 )
 async def get_own_aretan_profile(
     current_user: CurrentUser,
+    profile_service: ProfileSvc,
 ) -> AretanProfileResponse:
     """Get the current user's Aretan profile data."""
     if not current_user.aretan_profile:
@@ -119,7 +120,7 @@ async def get_own_aretan_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="You don't have an Aretan profile",
         )
-    return AretanProfileResponse.model_validate(current_user.aretan_profile)
+    return await profile_service._build_aretan_response(current_user.aretan_profile)
 
 
 @router.patch(
@@ -135,7 +136,7 @@ async def update_own_aretan_profile(
     """Update the current user's Aretan profile."""
     try:
         profile = await profile_service.update_aretan_profile(current_user, data)
-        return AretanProfileResponse.model_validate(profile)
+        return await profile_service._build_aretan_response(profile)
     except NotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
 
@@ -193,14 +194,14 @@ async def update_own_user_info(
     current_user: CurrentUser,
     profile_service: ProfileSvc,
 ) -> UserResponse:
-    """Update the current user's basic info (name, phone, contact email, country)."""
+    """Update the current user's basic info (name, phone, country)."""
     user = await profile_service.update_user_info(
         current_user,
         first_name=data.first_name,
         last_name=data.last_name,
         phone=data.phone,
-        contact_email=data.contact_email,
         country=data.country,
+        email_notifications_enabled=data.email_notifications_enabled,
     )
     return UserResponse.model_validate(user)
 

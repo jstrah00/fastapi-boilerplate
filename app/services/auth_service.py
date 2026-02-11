@@ -127,7 +127,7 @@ class AuthService:
         if user.is_locked:
             logger.warning("login_failed", email=credentials.email, reason="account_locked")
             raise AuthenticationError(
-                message="Account is temporarily locked. Try again later.",
+                message="Tu cuenta ha sido bloqueada, por favor utiliza la opción 'Olvidé mi contraseña' para desbloquearla",
                 details={"email": credentials.email},
             )
 

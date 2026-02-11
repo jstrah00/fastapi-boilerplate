@@ -62,8 +62,13 @@ Example:
 """
 from uuid import UUID
 
+from sqlalchemy import update as sa_update
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.repositories.user_repo import UserRepository
 from app.models.postgres.user import User
+from app.models.postgres.post import Post
+from app.models.postgres.comment import Comment
 from app.schemas.user import UserCreate, UserUpdate, UserRoleUpdate
 from app.common.security import get_password_hash, verify_password
 from app.common.logging import get_logger
@@ -88,8 +93,9 @@ class UserService:
     # - Repository delegation
     """
 
-    def __init__(self, user_repo: UserRepository):
+    def __init__(self, user_repo: UserRepository, db: AsyncSession | None = None):
         self.user_repo = user_repo
+        self.db = db
 
     async def get_user_by_id(self, user_id: UUID) -> User:
         """
@@ -200,8 +206,9 @@ class UserService:
             NotFoundError: If user not found
             ValidationError: If user doesn't have permission
         """
-        # Get user
-        await self.get_user_by_id(user_id)
+        # Get current status before update for block/unblock detection
+        target_user = await self.get_user_by_id(user_id)
+        old_status = target_user.status
 
         # Check permissions (user can update themselves, or admin can update anyone)
         if user_id != current_user.id and not current_user.is_admin:
@@ -219,6 +226,14 @@ class UserService:
                 message="User not found",
                 details={"user_id": str(user_id)},
             )
+
+        # Auto-hide/show posts and comments when user is blocked/unblocked
+        new_status = update_dict.get("status")
+        if new_status and new_status != old_status and self.db:
+            if new_status == "blocked":
+                await self._toggle_user_content(user_id, hidden=True)
+            elif new_status == "active" and old_status == "blocked":
+                await self._toggle_user_content(user_id, hidden=False)
 
         logger.info(
             "user_updated",
@@ -459,3 +474,19 @@ class UserService:
         )
         total = await self.user_repo.count(filters={"status": "pending"})
         return users, total
+
+    async def _toggle_user_content(self, user_id: UUID, hidden: bool) -> None:
+        """Hide or show all posts and comments by a user."""
+        if not self.db:
+            return
+
+        await self.db.execute(
+            sa_update(Post).where(Post.author_id == user_id).values(is_hidden=hidden)
+        )
+        await self.db.execute(
+            sa_update(Comment).where(Comment.author_id == user_id).values(is_hidden=hidden)
+        )
+        await self.db.flush()
+
+        action = "hidden" if hidden else "shown"
+        logger.info(f"user_content_{action}", user_id=str(user_id))

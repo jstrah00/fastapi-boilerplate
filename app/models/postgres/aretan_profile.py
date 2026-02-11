@@ -12,7 +12,7 @@ from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
 from sqlalchemy import String, Text, Boolean, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.postgres import Base
@@ -32,16 +32,12 @@ class AretanProfile(Base):
         index=True,
     )
 
-    # Lookups
-    industry_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("master_industries.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
+    # Lookups (multi-select arrays — no FK constraints on arrays)
+    industry_ids: Mapped[list[UUID] | None] = mapped_column(
+        ARRAY(PG_UUID(as_uuid=True)), nullable=True
     )
-    profession_id: Mapped[UUID | None] = mapped_column(
-        ForeignKey("master_professions.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
+    profession_ids: Mapped[list[UUID] | None] = mapped_column(
+        ARRAY(PG_UUID(as_uuid=True)), nullable=True
     )
     max_achievement_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("master_sport_achievements.id", ondelete="SET NULL"),
@@ -84,8 +80,6 @@ class AretanProfile(Base):
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="aretan_profile")
-    industry: Mapped["MasterIndustry | None"] = relationship("MasterIndustry", lazy="selectin")
-    profession: Mapped["MasterProfession | None"] = relationship("MasterProfession", lazy="selectin")
     max_achievement: Mapped["MasterSportAchievement | None"] = relationship(
         "MasterSportAchievement", lazy="selectin"
     )
@@ -102,9 +96,5 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.postgres.user import User
-    from app.models.postgres.master_tables import (
-        MasterIndustry,
-        MasterProfession,
-        MasterSportAchievement,
-    )
+    from app.models.postgres.master_tables import MasterSportAchievement
     from app.models.postgres.work_experience import WorkExperience

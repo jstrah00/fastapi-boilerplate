@@ -35,6 +35,9 @@ from app.models.postgres import master_tables  # noqa: F401
 from app.models.postgres import aretan_profile  # noqa: F401
 from app.models.postgres import contractor_profile  # noqa: F401
 from app.models.postgres import work_experience  # noqa: F401
+from app.models.postgres import post, comment, post_like  # noqa: F401
+from app.models.postgres import notification  # noqa: F401
+from app.models.postgres import contact_request  # noqa: F401
 
 # Alembic Config object
 config = context.config

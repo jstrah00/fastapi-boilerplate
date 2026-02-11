@@ -24,7 +24,7 @@ Related files:
 from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
-from sqlalchemy import String, DateTime, Integer
+from sqlalchemy import String, DateTime, Integer, Boolean
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -74,7 +74,6 @@ class User(Base):
 
     # Contact info (shared across roles)
     phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Profile image
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -82,6 +81,11 @@ class User(Base):
     # Location
     country: Mapped[str | None] = mapped_column(
         String(100), nullable=True, index=True
+    )
+
+    # Notification preferences
+    email_notifications_enabled: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
     )
 
     # Terms acceptance

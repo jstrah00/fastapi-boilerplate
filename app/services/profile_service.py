@@ -13,6 +13,7 @@ from app.models.postgres.user import User
 from app.models.postgres.aretan_profile import AretanProfile
 from app.models.postgres.contractor_profile import ContractorProfile
 from app.models.postgres.work_experience import WorkExperience
+from app.models.postgres.master_tables import MasterIndustry, MasterProfession
 from app.schemas.profile import (
     AretanProfileUpdate,
     ContractorProfileUpdate,
@@ -24,6 +25,8 @@ from app.schemas.profile import (
     AretanProfileResponse,
     ContractorProfileResponse,
     UnifiedPublicProfile,
+    MasterListRef,
+    WorkExperienceResponse,
 )
 from app.common.logging import get_logger
 from app.common.exceptions import NotFoundError, ValidationError
@@ -37,6 +40,43 @@ class ProfileService:
     def __init__(self, db: AsyncSession):
         """Initialize with database session."""
         self.db = db
+
+    async def _build_aretan_response(self, profile: AretanProfile) -> AretanProfileResponse:
+        """Build AretanProfileResponse with resolved industry/profession names."""
+        industries: list[MasterListRef] = []
+        professions: list[MasterListRef] = []
+
+        if profile.industry_ids:
+            result = await self.db.execute(
+                select(MasterIndustry).where(MasterIndustry.id.in_(profile.industry_ids))
+            )
+            industries = [MasterListRef(id=i.id, name=i.name) for i in result.scalars().all()]
+
+        if profile.profession_ids:
+            result = await self.db.execute(
+                select(MasterProfession).where(MasterProfession.id.in_(profile.profession_ids))
+            )
+            professions = [MasterListRef(id=p.id, name=p.name) for p in result.scalars().all()]
+
+        return AretanProfileResponse(
+            id=profile.id,
+            user_id=profile.user_id,
+            industries=industries,
+            professions=professions,
+            max_achievement=MasterListRef.model_validate(profile.max_achievement) if profile.max_achievement else None,
+            industry_ids=profile.industry_ids,
+            profession_ids=profile.profession_ids,
+            sport_description=profile.sport_description,
+            professional_description=profile.professional_description,
+            employment_status=profile.employment_status,
+            languages=profile.languages,
+            social_networks=profile.social_networks,
+            phone_visible=profile.phone_visible,
+            email_visible=profile.email_visible,
+            work_experiences=[WorkExperienceResponse.model_validate(we) for we in profile.work_experiences],
+            created_at=profile.created_at,
+            updated_at=profile.updated_at,
+        )
 
     # =========================================================================
     # Public Profile Views
@@ -77,12 +117,12 @@ class ProfileService:
             role=user.role,
             status=user.status,
             phone=user.phone if (is_owner or is_admin or profile.phone_visible) else None,
-            contact_email=user.contact_email if (is_owner or is_admin or profile.email_visible) else None,
+            email=user.email if (is_owner or is_admin or profile.email_visible) else None,
         )
 
         return AretanPublicProfile(
             user=user_info,
-            profile=AretanProfileResponse.model_validate(profile),
+            profile=await self._build_aretan_response(profile),
         )
 
     async def get_contractor_profile(
@@ -114,7 +154,7 @@ class ProfileService:
             role=user.role,
             status=user.status,
             phone=user.phone,
-            contact_email=user.contact_email,
+            email=user.email,
         )
 
         return ContractorPublicProfile(
@@ -153,9 +193,9 @@ class ProfileService:
                 role=user.role,
                 status=user.status,
                 phone=user.phone if (is_owner or is_admin or profile.phone_visible) else None,
-                contact_email=user.contact_email if (is_owner or is_admin or profile.email_visible) else None,
+                email=user.email if (is_owner or is_admin or profile.email_visible) else None,
             )
-            aretan_response = AretanProfileResponse.model_validate(profile)
+            aretan_response = await self._build_aretan_response(profile)
         elif user.role == "contratante" and user.contractor_profile:
             user_info = PublicUserInfo(
                 id=user.id,
@@ -166,7 +206,7 @@ class ProfileService:
                 role=user.role,
                 status=user.status,
                 phone=user.phone,
-                contact_email=user.contact_email,
+                email=user.email,
             )
             contractor_response = ContractorProfileResponse.model_validate(
                 user.contractor_profile
@@ -181,7 +221,7 @@ class ProfileService:
                 role=user.role,
                 status=user.status,
                 phone=None,
-                contact_email=None,
+                email=None,
             )
 
         return UnifiedPublicProfile(
@@ -250,8 +290,8 @@ class ProfileService:
         first_name: str | None = None,
         last_name: str | None = None,
         phone: str | None = None,
-        contact_email: str | None = None,
         country: str | None = None,
+        email_notifications_enabled: bool | None = None,
     ) -> User:
         """Update basic user info fields."""
         if first_name is not None:
@@ -260,10 +300,10 @@ class ProfileService:
             user.last_name = last_name
         if phone is not None:
             user.phone = phone
-        if contact_email is not None:
-            user.contact_email = contact_email
         if country is not None:
             user.country = country
+        if email_notifications_enabled is not None:
+            user.email_notifications_enabled = email_notifications_enabled
 
         await self.db.flush()
         await self.db.refresh(user)

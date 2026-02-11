@@ -32,9 +32,14 @@ class RegistrationService:
 
     async def register_aretan(self, data: AretanRegistration) -> User:
         """Register a new Aretan user with profile and work experiences."""
-        # Check email uniqueness
+        # Check email uniqueness (also block rejected emails from re-registering)
         existing = await self.user_repo.get_by_email(data.email)
         if existing:
+            if existing.status == "rejected":
+                raise AlreadyExistsError(
+                    message="This email has been previously rejected and cannot be used for registration",
+                    details={"email": data.email},
+                )
             raise AlreadyExistsError(
                 message="A user with this email already exists",
                 details={"email": data.email},
@@ -49,7 +54,6 @@ class RegistrationService:
             role="aretan",
             status="pending",
             phone=data.phone,
-            contact_email=data.contact_email,
             country=data.country,
             accepted_terms_at=datetime.now(UTC),
         )
@@ -59,8 +63,8 @@ class RegistrationService:
         # Create aretan profile
         profile = AretanProfile(
             user_id=user.id,
-            industry_id=data.industry_id,
-            profession_id=data.profession_id,
+            industry_ids=data.industry_ids,
+            profession_ids=data.profession_ids,
             max_achievement_id=data.max_achievement_id,
             sport_description=data.sport_description,
             professional_description=data.professional_description,
@@ -102,9 +106,14 @@ class RegistrationService:
 
     async def register_contractor(self, data: ContractorRegistration) -> User:
         """Register a new Contratante user with profile."""
-        # Check email uniqueness
+        # Check email uniqueness (also block rejected emails from re-registering)
         existing = await self.user_repo.get_by_email(data.email)
         if existing:
+            if existing.status == "rejected":
+                raise AlreadyExistsError(
+                    message="This email has been previously rejected and cannot be used for registration",
+                    details={"email": data.email},
+                )
             raise AlreadyExistsError(
                 message="A user with this email already exists",
                 details={"email": data.email},
@@ -119,7 +128,6 @@ class RegistrationService:
             role="contratante",
             status="active",
             phone=data.phone,
-            contact_email=data.contact_email,
             country=data.country,
             accepted_terms_at=datetime.now(UTC),
         )

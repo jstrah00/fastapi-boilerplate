@@ -253,3 +253,46 @@ async def delete_comment(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
     except ValidationError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=e.message)
+
+
+# --------------------------------------------------------------------- #
+# Admin Moderation
+# --------------------------------------------------------------------- #
+
+@router.patch(
+    "/{post_id}/hide",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Hide/unhide post (admin)",
+)
+async def toggle_post_visibility(
+    post_id: UUID,
+    current_user: CurrentUser,
+    post_service: PostSvc,
+) -> None:
+    """Toggle post visibility (admin moderation)."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only")
+    try:
+        await post_service.toggle_post_visibility(post_id)
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
+
+
+@router.patch(
+    "/{post_id}/comments/{comment_id}/hide",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Hide/unhide comment (admin)",
+)
+async def toggle_comment_visibility(
+    post_id: UUID,
+    comment_id: UUID,
+    current_user: CurrentUser,
+    post_service: PostSvc,
+) -> None:
+    """Toggle comment visibility (admin moderation)."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only")
+    try:
+        await post_service.toggle_comment_visibility(comment_id)
+    except NotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=e.message)
