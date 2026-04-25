@@ -56,6 +56,11 @@ cp .env.example .env
 # Install dependencies
 uv sync
 
+# Wire up pre-commit hooks (one-time per clone)
+# Runs Ruff lint+format and basic file hygiene before every git commit.
+# Tests and mypy are NOT in pre-commit by design — run those on demand.
+uv run pre-commit install
+
 # Start databases
 docker compose up -d postgres mongodb
 
@@ -236,6 +241,11 @@ uv run python scripts/init_db.py
 ### Code Quality
 
 ```bash
+# Pre-commit (runs Ruff lint+format and basic hygiene on every git commit)
+uv run pre-commit install            # ONE-TIME per clone — installs the git hook
+uv run pre-commit run --all-files    # Run all hooks against the entire tree
+uv run pre-commit autoupdate         # Bump pinned hook versions
+
 # Format code
 uv run ruff format app tests
 uv run ruff check --fix app tests
@@ -243,7 +253,7 @@ uv run ruff check --fix app tests
 # Lint code
 uv run ruff check app tests
 
-# Type checking
+# Type checking (NOT in pre-commit — run on demand)
 uv run mypy app
 
 # Run all quality checks

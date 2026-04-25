@@ -1,14 +1,27 @@
-# Pre-commit hooks for the backend submodule.
-# Install once per clone: cd backend && uv run pre-commit install
-# Run on demand:           cd backend && uv run pre-commit run --all-files
+# Pre-commit hooks for the backend.
+# Scope: linter + formatter + basic file hygiene. NO tests, NO type checks
+# (mypy is intentionally excluded — run it on demand: `uv run mypy app`).
+#
+# One-time setup per clone:
+#   cd backend && uv run pre-commit install
+#
+# After that, every `git commit` runs these hooks against staged files.
+#
+# Run manually on the whole tree:
+#   cd backend && uv run pre-commit run --all-files
+#
+# Update hook versions periodically:
+#   cd backend && uv run pre-commit autoupdate
 repos:
+  # Ruff: Python linter (replaces flake8/isort/pylint) + formatter (replaces black)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.7.0
     hooks:
-      - id: ruff
+      - id: ruff           # lint with autofix
         args: [--fix]
-      - id: ruff-format
+      - id: ruff-format    # format
 
+  # Generic file hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -17,12 +30,3 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-merge-conflict
-
-  - repo: local
-    hooks:
-      - id: mypy
-        name: mypy
-        entry: uv run mypy app
-        language: system
-        types: [python]
-        pass_filenames: false

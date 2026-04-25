@@ -3,11 +3,14 @@
 ## Quick Start
 ```bash
 uv sync && cp .env.example .env
+uv run pre-commit install        # ONE-TIME — wires ruff lint + format + hygiene checks into git commits
 docker compose up -d postgres mongodb
 uv run alembic upgrade head
 uv run python scripts/init_db.py # Creates admin@example.com / admin123
-uv run dev # http://localhost:8000
+uv run dev                       # http://localhost:8000
 ```
+
+> **Pre-commit**: must be installed once per clone with `uv run pre-commit install`. After that every `git commit` runs Ruff (lint + autofix + format) and basic file hygiene against staged files. Run on the whole tree manually with `uv run pre-commit run --all-files`. Tests and mypy are NOT in pre-commit by design — run those on demand (`uv run pytest`, `uv run mypy app`).
 
 ## Environment Configuration
 
