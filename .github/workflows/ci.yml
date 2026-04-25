@@ -1,0 +1,61 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app_user
+          POSTGRES_PASSWORD: app_dev_password
+          POSTGRES_DB: app_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mongodb:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: app_admin
+          MONGO_INITDB_ROOT_PASSWORD: app_mongo_password
+        ports:
+          - 27017:27017
+    env:
+      ENVIRONMENT: test
+      SECRET_KEY: ci-test-secret-key-not-for-production-use-only-in-pipeline
+      POSTGRES_SERVER: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_dev_password
+      POSTGRES_DB: app_db
+      MONGODB_URL: mongodb://app_admin:app_mongo_password@localhost:27017/app_db?authSource=admin
+      MONGODB_DB: app_db
+      CORS_ORIGINS: '["http://localhost:5173"]'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Sync deps
+        run: uv sync --all-extras --dev
+      - name: Ruff format check
+        run: uv run ruff format --check app tests
+      - name: Ruff lint
+        run: uv run ruff check app tests
+      - name: MyPy
+        run: uv run mypy app
+      - name: Pytest
+        run: uv run pytest --cov=app --cov-report=term-missing
