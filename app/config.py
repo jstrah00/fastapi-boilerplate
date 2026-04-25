@@ -60,7 +60,9 @@ Setting categories:
     - MongoDB: MONGODB_URL, MONGODB_DB, pool settings
     - Alerts: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_ALERTS_ENABLED
 """
+
 from typing import Any, Literal
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -95,6 +97,24 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     SECRET_KEY: str  # REQUIRED: Generate with `openssl rand -hex 32`
     ALGORITHM: str = "HS256"
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def reject_dev_secret_in_production(cls, v: str, info: Any) -> str:
+        """Reject the .env.example placeholder when ENVIRONMENT=production.
+
+        Closes CRITICAL-2 from docs/audits/claude-setup-audit-2026-04-25.md:
+        a developer who copies .env.example to .env and deploys without
+        rotating SECRET_KEY would otherwise ship the well-known default.
+        """
+        env = info.data.get("ENVIRONMENT", "development")
+        if env == "production" and v.startswith("dev-secret-key-"):
+            raise ValueError(
+                "SECRET_KEY must be set to a production-grade value when "
+                "ENVIRONMENT=production. Generate with: openssl rand -hex 32"
+            )
+        return v
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     REFRESH_TOKEN_EXPIRE_DAYS_REMEMBER_ME: int = 30  # For "remember me" feature
