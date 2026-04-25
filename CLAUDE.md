@@ -263,3 +263,15 @@ docker compose --profile tools up -d # PgAdmin + Mongo Express
 - PgAdmin: http://localhost:5050 (admin@admin.com / admin)
 - Mongo Express: http://localhost:8081
 - API Docs: http://localhost:8000/docs
+
+---
+
+## Project-level docs (super-repo)
+
+When the backend is mounted as a submodule of `saas-boilerplate`, additional cross-cutting docs live one level up:
+
+- `../docs/audits/` — point-in-time audits of the repo (latest covers AI config + code patterns + severity-ranked findings).
+- `../docs/plans/` — multi-step implementation plans (e.g. the alignment plan that produced this file's last refresh).
+- `../docs/gotchas.md` — running log of real incidents.
+- `../.claude/rules/backend-data-layer.md` — repository/service rules + multi-tenancy gap reminder.
+- `../.claude/rules/backend-migrations.md` — Alembic autogenerate-only workflow.
