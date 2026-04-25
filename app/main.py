@@ -53,34 +53,63 @@ Lifecycle events:
     - Startup: Initialize PostgreSQL, MongoDB, configure logging
     - Shutdown: Close database connections gracefully
 """
+
+import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import structlog
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
-from app.config import settings
-from app.common.logging import configure_logging, get_logger
-from app.common.exceptions import AppException
-from app.db.postgres import init_db as init_postgres, close_db as close_postgres
-from app.db.mongodb import init_mongodb, close_mongodb
-from app.api.v1.router import api_router
 from app.api.handlers import (
     app_exception_handler,
-    validation_exception_handler,
     general_exception_handler,
+    validation_exception_handler,
 )
+from app.api.v1.router import api_router
+from app.common.exceptions import AppException
+from app.common.logging import configure_logging, get_logger
+from app.config import settings
+from app.db.mongodb import close_mongodb, init_mongodb
+from app.db.postgres import close_db as close_postgres
 
 # Configure logging first
 configure_logging()
 logger = get_logger(__name__)
 
-# Global rate limiter instance
-limiter = Limiter(key_func=get_remote_address)
+# Global rate limiter — per-IP defaults; per-endpoint @limiter.limit overrides apply on top.
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=["120/minute", "1000/hour"],
+)
+
+
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    """Bind a per-request UUID to structlog's contextvars and the X-Request-ID header.
+
+    Every log line emitted while handling the request will carry `request_id`,
+    so traces can be reassembled across services. Clients may pass their own
+    X-Request-ID; otherwise we generate one.
+    """
+
+    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=request_id)
+        try:
+            response: Response = await call_next(request)
+        finally:
+            structlog.contextvars.clear_contextvars()
+        response.headers["X-Request-ID"] = request_id
+        return response
 
 
 @asynccontextmanager
@@ -101,10 +130,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )
 
     try:
-        # Initialize PostgreSQL
-        # NOTE: In development, this creates tables. In production, use Alembic migrations.
-        if settings.is_development:
-            await init_postgres()
+        # PostgreSQL schema is owned by Alembic in every environment, including
+        # dev. Run `uv run alembic upgrade head` before starting the app. The
+        # previous init_postgres() call here bypassed migrations and caused
+        # drift between dev (auto-created tables) and prod (Alembic-managed).
 
         # Initialize MongoDB
         # NOTE: If not using MongoDB, comment out or remove this line
@@ -145,12 +174,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Register rate limiter
+# Register rate limiter — SlowAPIMiddleware enforces default_limits app-wide;
+# per-endpoint @limiter.limit decorators still apply on top.
 app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 # =============================================================================
-# Middleware
+# Middleware (order matters: outermost runs first on requests, last on responses)
 # =============================================================================
+app.add_middleware(RequestIDMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
