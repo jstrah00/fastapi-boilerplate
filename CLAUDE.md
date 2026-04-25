@@ -241,6 +241,21 @@ def test_create(service):
 
 ---
 
+## Multi-tenancy Status: NOT IMPLEMENTED
+
+This boilerplate does **not** ship an `Organization` (tenant) model.
+
+- `Item` is owned per-user via `owner_id` (FK to `users.id`) — see `app/models/postgres/item.py:85` and `app/repositories/item_repo.py:66-98`.
+- The comment in `app/models/postgres/user.py:74` ("organization_id: For multi-tenant applications") is aspirational; no column exists.
+
+**Policy until `Organization` is introduced**:
+- Every query that returns user-scoped data MUST filter by `owner_id`. Cross-user reads are a security bug.
+- When introducing `Organization`, every domain model gets `organization_id: Mapped[UUID] = mapped_column(ForeignKey("organizations.id"), index=True)` and every query also filters by it. Add a regression test before the refactor.
+
+**See**: `../docs/audits/claude-setup-audit-2026-04-25.md` (CRITICAL-1) and `../.claude/rules/backend-data-layer.md`.
+
+---
+
 ## Dev Tools
 ```bash
 docker compose --profile tools up -d # PgAdmin + Mongo Express
