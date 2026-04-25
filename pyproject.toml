@@ -55,15 +55,14 @@ dev = [
     "pytest-mock>=3.14.0",
     "faker>=30.0.0",
     "factory-boy>=3.3.0",
-
     # Code Quality
     "ruff>=0.7.0",
     "mypy>=1.13.0",
     "types-passlib>=1.7.7",
     "types-python-jose>=3.3.4",
-
     # Dev Tools
     "ipython>=8.20.0",
+    "pre-commit>=4.6.0",
 ]
 
 [project.scripts]
