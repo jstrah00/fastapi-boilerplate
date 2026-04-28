@@ -133,27 +133,28 @@ uv run alembic upgrade head
 
 **6. Endpoint** → Use `/fastapi-endpoint` skill
 ```python
-# app/api/v1/your_endpoint.py
+# app/api/v1/your_resource.py
 """API endpoints for YourResource management."""
 
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, status
 
-from app.common.dependencies import get_db, get_current_user
-from app.models.user import User
-from app.schemas.your_schema import CreateSchema, ResponseSchema
+from app.api.deps import CurrentUser, YourResourceSvc
+from app.schemas.your_resource import CreateSchema, ResponseSchema
 
-router = APIRouter()
+router = APIRouter(prefix="/your-resource", tags=["your-resource"])
 
-@router.post("/", response_model=ResponseSchema)
-def create(
- data: CreateSchema,
- db: Session = Depends(get_db), # MUST come before get_current_user
- current_user: User = Depends(get_current_user)
+
+@router.post("/", response_model=ResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_resource(
+    data: CreateSchema,
+    current_user: CurrentUser,    # Annotated[User, Depends(get_current_active_user)]
+    service: YourResourceSvc,     # Annotated[YourResourceService, Depends(get_your_resource_service)]
 ):
- # Instantiate repo → service → return
+    return await service.create(data, current_user)
 ```
 - **MUST**: Module docstring at top, describing API endpoints
+- Use the `Annotated` type aliases exported from `app/api/deps.py` (`CurrentUser`, `CurrentAdmin`, `ItemSvc`, `UserSvc`, `UserRepo`, `ItemRepo`, `BlacklistRepo`). Don't write `Depends(get_db)` at the endpoint signature — repositories/services receive the `AsyncSession` internally.
+- Endpoints must be `async def`; the entire stack is SQLAlchemy 2.0 async.
 
 **7. Register** → Add to `app/api/v1/router.py`
 
@@ -217,9 +218,9 @@ def test_create(service):
 - Never commit migrations without reviewing generated SQL
 
 **Dependencies**
-- `get_db()` → SQLAlchemy session (PostgreSQL only)
-- `get_current_user()` queries PostgreSQL - skip in MongoDB-only endpoints
-- Dependency order: `get_current_user` MUST come after `get_db`
+- Canonical injection lives in `app/api/deps.py` as `Annotated` type aliases (`CurrentUser`, `CurrentAdmin`, `ItemSvc`, `UserSvc`, `AuthSvc`, `UserRepo`, `ItemRepo`, `BlacklistRepo`). Endpoints declare them by annotation — no manual `Depends(...)` calls in route signatures.
+- `get_db()` lives in `app/db/postgres.py` and yields an `AsyncSession`. Only repository/service factories consume it directly.
+- `get_current_user` (cookie or `Authorization: Bearer`) lives in `app/api/deps.py`. Use `CurrentUser` for auth-required endpoints, `CurrentAdmin` for admin-only — both go through `get_current_active_user`.
 
 **Schemas**
 - Forget `from_attributes = True` → Pydantic validation error
