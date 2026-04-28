@@ -266,8 +266,11 @@ docker compose --profile tools up -d # PgAdmin + Mongo Express
 
 When the backend is mounted as a submodule of `saas-boilerplate`, additional cross-cutting docs live one level up:
 
-- `../docs/audits/` — point-in-time audits of the repo (latest covers AI config + code patterns + severity-ranked findings).
-- `../docs/plans/` — multi-step implementation plans (e.g. the alignment plan that produced this file's last refresh).
+- `../.claude/scratch/{audits,plans}/` — gitignored ephemeral. Meta-audits + tactical plans about the Claude setup. Borrar libre.
+- `../docs/plans/active/` — committed. Multi-day feature plans worth tracking while in flight.
+- `../docs/adr/` — committed. Permanent architectural decisions (e.g. `001-dual-database-strategy.md`).
 - `../docs/gotchas.md` — running log of real incidents.
 - `../.claude/rules/backend-data-layer.md` — repository/service rules + multi-tenancy gap reminder.
 - `../.claude/rules/backend-migrations.md` — Alembic autogenerate-only workflow.
+
+_Archive_: `../docs/audits/` and `../docs/plans/` (root) hold pre-2026-04-28 work. Read-only history.
