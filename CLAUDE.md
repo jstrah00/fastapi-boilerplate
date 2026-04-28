@@ -86,17 +86,9 @@ and any important patterns or conventions it follows.
 
 ---
 
-## Database Strategy: Choose Before Creating Models
+## Database Strategy
 
-<database_decision>
-**PostgreSQL** (app/models/postgres/) - MUST use for:
-- User authentication, relational data, foreign keys, ACID transactions, complex joins
-
-**MongoDB** (app/models/mongodb/) - Use for:
-- Flexible schemas, high-write workloads, nested documents, varying structures
-</database_decision>
-
-**Example**: Items → PostgreSQL (has `owner_id` FK to Users)
+PostgreSQL is the default for relational, transactional, RBAC-bound data; MongoDB is reserved for flexible-schema and high-write payloads. The full decision tree (when to pick which, with examples beyond `Item`) lives in `../docs/ARCHITECTURE.md` § *Dual Database Strategy*; the canonical reference implementation is `app/models/postgres/item.py` (FK to `users.id`, `owner_id`-scoped queries in `app/repositories/item_repo.py`).
 
 ---
 
