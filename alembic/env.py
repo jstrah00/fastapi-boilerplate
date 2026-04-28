@@ -13,14 +13,14 @@ Alembic migration environment with async support.
 # - Add model imports below when you create new models
 # =============================================================================
 """
+
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
-from alembic import context
 
 # Import app config and models
 from app.config import settings
@@ -30,7 +30,7 @@ from app.db.postgres import Base
 # IMPORTANT: Import all models to register them with SQLAlchemy metadata.
 # Add new model imports here when you create new models.
 # =============================================================================
-from app.models.postgres import user, item  # noqa: F401
+from app.models.postgres import item, refresh_token_blacklist, user  # noqa: F401
 
 # CUSTOMIZATION: Add more model imports as you create them:
 # from app.models.postgres import your_model  # noqa: F401
