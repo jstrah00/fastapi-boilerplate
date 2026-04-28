@@ -3,28 +3,13 @@
 Step-by-step guide for implementing features in this FastAPI backend with PostgreSQL + MongoDB.
 
 ## Table of Contents
-- [Quick Start](#quick-start)
 - [Feature Implementation Flow](#feature-implementation-flow)
 - [Common Feature Types](#common-feature-types)
 - [Integration with Frontend](#integration-with-frontend)
 - [Testing Strategy](#testing-strategy)
 - [Tips & Best Practices](#tips--best-practices)
 
----
-
-## Quick Start
-
-### Prerequisites
-- Docker services running (PostgreSQL, MongoDB)
-- Backend running at http://localhost:8000
-- Familiarity with FastAPI, SQLAlchemy, and async Python
-- Python 3.11+ with UV package manager
-
-### Typical Feature Timeline
-- Simple CRUD: 1-2 hours
-- Form with validation: 30-45 minutes
-- Complex business logic: 2-4 hours
-- Multi-database feature: 3-5 hours
+> **Setup**: see the root `docs/GETTING_STARTED.md` for prerequisites, Docker services, and how to run the backend. This document covers the feature-implementation flow only.
 
 ---
 
