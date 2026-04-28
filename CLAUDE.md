@@ -57,15 +57,7 @@ curl -X OPTIONS http://localhost:8000/api/v1/users \
 
 ## Claude Code Skills
 
-Use skills with `/skill-name` format:
-- `/fastapi-endpoint` - Generate endpoints with dependencies
-- `/fastapi-model` - Create PostgreSQL/MongoDB models
-- `/fastapi-permission` - Add RBAC permissions
-- `/fastapi-migration` - Alembic migrations
-- `/fastapi-test` - Generate test files
-- `/feature-from-plan` - Execute structured Claude.ai Project plan
-
-**IMPORTANT**: Always invoke relevant skill when creating features - they contain boilerplate-specific patterns.
+Backend skills live under `.claude/skills/` and are autodetected by Claude Code. Full index with descriptions: `../docs/SKILLS_REFERENCE.md`. Always invoke the relevant `/skill-name` when creating features — they encode boilerplate-specific patterns.
 
 ---
 
