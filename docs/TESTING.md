@@ -2,20 +2,6 @@
 
 Complete guide for testing FastAPI backend with pytest, including unit tests, integration tests, and best practices.
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Test Structure](#test-structure)
-- [Running Tests](#running-tests)
-- [Writing Unit Tests](#writing-unit-tests)
-- [Writing Integration Tests](#writing-integration-tests)
-- [Test Fixtures](#test-fixtures)
-- [Mocking](#mocking)
-- [Coverage](#coverage)
-- [Best Practices](#best-practices)
-- [Common Patterns](#common-patterns)
-- [Troubleshooting](#troubleshooting)
-
 ---
 
 ## Overview
@@ -687,70 +673,6 @@ async def test_list_items_pagination(client, auth_headers):
  assert len(data["items"]) == 10
  assert data["total"] == 25
  assert data["pages"] == 3
-```
-
----
-
-## Troubleshooting
-
-### Tests Hang
-
-**Cause**: Async fixtures not properly cleaned up
-
-**Solution**:
-```python
-@pytest.fixture
-async def my_fixture():
- resource = await create_resource()
- yield resource
- await resource.cleanup() # Don't forget cleanup!
-```
-
-### Database Connection Errors
-
-**Cause**: Test database not created or wrong URL
-
-**Solution**:
-```bash
-# Create test database
-createdb test_db
-
-# Verify TEST_DATABASE_URL in conftest.py
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/test_db"
-```
-
-### Tests Pass Individually But Fail Together
-
-**Cause**: Tests sharing state or not cleaning up
-
-**Solution**:
-- Use database transactions that rollback
-- Clear caches between tests
-- Use fresh fixtures for each test
-
-### Slow Tests
-
-**Causes**:
-- Too many database calls
-- Not using fixtures efficiently
-- Creating too much test data
-
-**Solutions**:
-```python
-# Use session-scoped fixtures for expensive setup
-@pytest.fixture(scope="session")
-async def test_engine():
- ...
-
-# Use class-level fixtures for grouped tests
-@pytest.fixture(scope="class")
-async def test_data():
- ...
-
-# Mock slow external calls
-@patch("app.services.slow_external_api")
-async def test_feature(mock_api):
- ...
 ```
 
 ---
