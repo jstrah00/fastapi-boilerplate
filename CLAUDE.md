@@ -215,9 +215,9 @@ def test_create(service):
 - `get_current_user` (cookie or `Authorization: Bearer`) lives in `app/api/deps.py`. Use `CurrentUser` for auth-required endpoints, `CurrentAdmin` for admin-only — both go through `get_current_active_user`.
 
 **Schemas**
-- Forget `from_attributes = True` → Pydantic validation error
-- MongoDB ObjectId as `ObjectId` type → serialization error (use `str`)
-- Schema field mismatch → check model field names exactly
+- Response schemas that wrap a SQLAlchemy row need Pydantic v2 `model_config = ConfigDict(from_attributes=True)` — see `app/schemas/user.py:142` and `app/schemas/item.py:96` for the canonical pattern. Without it, Pydantic refuses to read attribute-style ORM objects.
+- MongoDB ObjectId in schemas → declare as `str`, not `bson.ObjectId` (which doesn't serialize cleanly to JSON).
+- Schema field mismatch → field names must match the model exactly; SQLAlchemy column names ≠ Pydantic aliases.
 
 **Security**
 - Hash passwords in services with `security.get_password_hash()`, NOT models
