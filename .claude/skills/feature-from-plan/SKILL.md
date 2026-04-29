@@ -1,3 +1,4 @@
+---
 name: feature-from-plan
 description: Systematically implement features from structured Claude.ai Project prompts. Creates implementation checklist, executes step-by-step with validation, tracks progress. Use when you have a detailed feature prompt from the Feature Planner workflow.
 ---
