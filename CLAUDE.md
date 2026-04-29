@@ -214,7 +214,7 @@ def test_create(service):
 **Security**
 - Hash passwords in services with `security.get_password_hash()`, NOT models
 - Refresh tokens MUST be single-use (invalidate after use)
-- 401 errors → verify `Authorization: Bearer <token>` header format
+- 401 errors → primary mode is the httpOnly access cookie (sent automatically by the browser when the frontend uses `withCredentials: true`); `Authorization: Bearer <token>` still works as a fallback for tools like curl / Swagger UI / non-browser clients
 
 **Common Errors**
 - "Table already exists" → `alembic downgrade -1` then `upgrade head`
