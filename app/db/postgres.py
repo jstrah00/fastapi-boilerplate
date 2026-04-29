@@ -115,27 +115,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-async def init_db() -> None:
-    """
-    Initialize database by creating all tables.
-
-    NOTE: In production, use Alembic migrations instead of this function.
-    This is only for development to quickly create tables.
-    """
-    try:
-        async with engine.begin() as conn:
-            # Import all models here to ensure they're registered with Base
-            from app.models.postgres import user, item  # noqa: F401
-
-            # Create all tables
-            await conn.run_sync(Base.metadata.create_all)
-
-        logger.info("postgres_initialized", message="PostgreSQL tables created")
-    except Exception as e:
-        logger.error("postgres_init_failed", error=str(e))
-        raise
-
-
 async def close_db() -> None:
     """Close database connections."""
     try:

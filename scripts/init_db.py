@@ -1,8 +1,9 @@
 """
-Database initialization script.
+Database seeding script.
 
 # =============================================================================
-# USAGE: Creates database tables and a default admin user.
+# USAGE: Initializes MongoDB collections and creates a default admin user.
+#        Run AFTER `uv run alembic upgrade head` (Alembic owns PostgreSQL schema).
 #
 #   uv run python scripts/init_db.py
 #
@@ -18,7 +19,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.db.postgres import init_db, AsyncSessionLocal
+from app.db.postgres import AsyncSessionLocal
 from app.db.mongodb import init_mongodb
 from app.models.postgres.user import User
 from app.common.security import get_password_hash
@@ -96,11 +97,6 @@ async def main() -> None:
     """Initialize database and create seed data."""
     try:
         print("\n  Initializing database...\n")
-
-        # Initialize PostgreSQL
-        print("  Creating PostgreSQL tables...")
-        await init_db()
-        print("  PostgreSQL tables created\n")
 
         # Initialize MongoDB
         print("  Initializing MongoDB...")
